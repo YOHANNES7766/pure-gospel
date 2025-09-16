@@ -46,9 +46,9 @@ const Footer = () => {
         {/* Contact Info */}
         <div>
           <h4 className="text-lg font-semibold text-white mb-4">Get in Touch</h4>
-          <p className="mb-2">✉️ info@puregospel.org</p>
-          <p className="mb-2">📞 +123 456 7890</p>
-          <p>📍 123 Church Street, City</p>
+          <p className="mb-2">✉️ info@puregospel.com</p>
+          <p className="mb-2">📞 +251 911 850 003</p>
+          <p>📍 Betel Adebabay, AA</p>
 
           {/* Social Media */}
           <div className="flex justify-center md:justify-start gap-4 mt-4">

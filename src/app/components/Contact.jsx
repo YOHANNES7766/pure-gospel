@@ -72,9 +72,9 @@ const Contact = () => {
 
         {/* Church Info */}
         <div className="mt-12 text-gray-700">
-          <p className="font-semibold">📍 Address: 123 Church Street, Your City</p>
-          <p>📞 Phone: +251 912 345 678</p>
-          <p>✉️ Email: contact@yourchurch.org</p>
+          <p className="font-semibold">📍 Address: betel adebabay, AA City</p>
+          <p>📞 Phone: +251 911 850 003</p>
+          <p>✉️ Email: contact@puregospel.com</p>
         </div>
       </div>
     </section>
