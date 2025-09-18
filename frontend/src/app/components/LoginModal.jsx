@@ -7,12 +7,41 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
   const [showPassword, setShowPassword] = useState(false);
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   if (!isOpen) return null;
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mobile, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || "Invalid credentials. Please try again.");
+      } else {
+        localStorage.setItem("token", data.access_token);
+        alert(`Welcome, ${data.user.name || data.user.mobile}!`);
+        onClose();
+      }
+    } catch (err) {
+      setError("Failed to connect to server. Check your backend URL.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      {/* Modal Box */}
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative animate-fadeIn">
         {/* Close Button */}
         <button
@@ -30,15 +59,15 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
           Login with your mobile number and password
         </p>
 
+        {/* Error */}
+        {error && (
+          <div className="mb-4 text-sm text-red-600 text-center bg-red-50 p-2 rounded">
+            {error}
+          </div>
+        )}
+
         {/* Form */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            alert(`Logging in with: ${mobile}, ${password}`);
-            onClose();
-          }}
-          className="space-y-5"
-        >
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Mobile */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -81,9 +110,14 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition transform hover:scale-[1.02] shadow-md"
+            disabled={loading}
+            className={`w-full py-3 text-white rounded-lg font-semibold shadow-md transition transform hover:scale-[1.02] ${
+              loading
+                ? "bg-blue-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
@@ -103,7 +137,7 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
             <button
               onClick={() => {
                 onClose();
-                onOpenSignup(); // ✅ open signup modal instead of redirect
+                onOpenSignup();
               }}
               className="text-blue-600 hover:underline"
             >
