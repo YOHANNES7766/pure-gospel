@@ -5,6 +5,9 @@ import { Eye, EyeOff, X } from "lucide-react";
 
 export default function SignupModal({ isOpen, onClose, onOpenLogin }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const [form, setForm] = useState({
     fullName: "",
     mobile: "",
@@ -30,10 +33,34 @@ export default function SignupModal({ isOpen, onClose, onOpenLogin }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Signup Data:\n" + JSON.stringify(form, null, 2));
-    onClose();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Signup failed");
+      }
+
+      alert("Signup successful! 🎉");
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,6 +81,11 @@ export default function SignupModal({ isOpen, onClose, onOpenLogin }) {
         <p className="text-center text-gray-600 mb-6">
           Sign up to stay connected with our church community
         </p>
+
+        {/* Error */}
+        {error && (
+          <p className="text-red-600 text-center font-medium mb-4">{error}</p>
+        )}
 
         {/* Signup Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -176,9 +208,10 @@ export default function SignupModal({ isOpen, onClose, onOpenLogin }) {
           {/* Submit */}
           <button
             type="submit"
+            disabled={loading}
             className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition transform hover:scale-[1.02] shadow-md"
           >
-            Sign Up
+            {loading ? "Signing Up..." : "Sign Up"}
           </button>
         </form>
 
