@@ -12,18 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-    $table->id();
-    $table->string('name');
-    $table->string('mobile')->nullable();
-    $table->json('interests')->nullable();
-    $table->enum('member_status', ['yes', 'no'])->default('no');
-    $table->string('email')->unique()->nullable(); // optional for now
-    $table->timestamp('email_verified_at')->nullable();
-    $table->string('password');
-    $table->rememberToken();
-    $table->timestamps();
-});
-
+            $table->id();
+            $table->string('fullName'); // matches signup form + model
+            $table->string('mobile')->unique(); // required for login instead of email
+            $table->string('password');
+            $table->json('interests')->nullable();
+            $table->enum('member_status', ['yes', 'no'])->default('no');
+            $table->string('role')->default('user'); // admin or user
+            $table->rememberToken();
+            $table->timestamps();
+        });
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();

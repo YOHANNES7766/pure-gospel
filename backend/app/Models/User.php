@@ -16,7 +16,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',         // match the column in DB and controller
+        'fullName',         // match the column in DB and controller
         'mobile',
         'password',
         'interests',

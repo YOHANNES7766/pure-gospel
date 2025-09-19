@@ -13,7 +13,7 @@ export default function SignupModal({ isOpen, onClose, onOpenLogin }) {
     mobile: "",
     password: "",
     interests: [],
-    memberStatus: "no",
+    member_status: "no",
   });
 
   if (!isOpen) return null;
@@ -183,9 +183,9 @@ export default function SignupModal({ isOpen, onClose, onOpenLogin }) {
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
-                  name="memberStatus"
+                  name="member_status"
                   value="yes"
-                  checked={form.memberStatus === "yes"}
+                  checked={form.member_status === "yes"}
                   onChange={handleChange}
                   className="h-4 w-4 text-blue-600"
                 />
@@ -194,9 +194,9 @@ export default function SignupModal({ isOpen, onClose, onOpenLogin }) {
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
-                  name="memberStatus"
+                  name="member_status"
                   value="no"
-                  checked={form.memberStatus === "no"}
+                  checked={form.member_status === "no"}
                   onChange={handleChange}
                   className="h-4 w-4 text-blue-600"
                 />
