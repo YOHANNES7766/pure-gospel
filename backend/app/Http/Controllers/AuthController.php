@@ -8,30 +8,44 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    // Signup new user
     public function signup(Request $request)
     {
         $validated = $request->validate([
-            'fullName' => 'required|string|max:255',
-            'mobile' => 'nullable|string|max:20',
-            'password' => 'required|string|min:6',
-            'interests' => 'nullable|array',
+            'fullName'      => 'required|string|max:255',
+            'mobile'        => 'nullable|string|max:20|unique:users,mobile',
+            'password'      => 'required|string|min:6',
+            'interests'     => 'nullable|array',
             'member_status' => 'required|in:yes,no',
         ]);
 
         $user = User::create([
-            'fullName' => $validated['fullName'],
-            'mobile' => $validated['mobile'] ?? null,
-            'password' => Hash::make($validated['password']),
-            'interests' => $validated['interests'] ?? [],
+            'fullName'      => $validated['fullName'],
+            'mobile'        => $validated['mobile'] ?? null,
+            'password'      => Hash::make($validated['password']),
+            'interests'     => $validated['interests'] ?? [],
             'member_status' => $validated['member_status'],
+            'role'          => 'user', // default role
         ]);
+
+        // Create token
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Signup successful',
-            'user' => $user,
+            'user'    => [
+                'id'           => $user->id,
+                'fullName'     => $user->fullName,
+                'mobile'       => $user->mobile,
+                'role'         => $user->role,
+                'memberStatus' => $user->member_status,
+                'interests'    => $user->interests,
+            ],
+            'token'   => $token,
         ], 201);
     }
 
+    // Login existing user
     public function login(Request $request)
     {
         $validated = $request->validate([
@@ -47,13 +61,30 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Generate token (requires Sanctum or Passport)
+        // Generate token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login successful',
-            'user' => $user,
+            'user'    => [
+                'id'           => $user->id,
+                'fullName'     => $user->fullName,
+                'mobile'       => $user->mobile,
+                'role'         => $user->role,
+                'memberStatus' => $user->member_status,
+                'interests'    => $user->interests,
+            ],
             'token' => $token,
+        ]);
+    }
+
+    // Logout
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Logged out successfully',
         ]);
     }
 }

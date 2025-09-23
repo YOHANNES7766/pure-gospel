@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\IsAdmin;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,12 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Enable CORS
+        // Enable CORS globally
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
 
-        // 👇 Register middleware aliases here
+        // ✅ Register custom middleware aliases
         $middleware->alias([
-            'isAdmin' => \App\Http\Middleware\IsAdmin::class,
+            'admin' => IsAdmin::class, // use 'admin' alias in routes
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

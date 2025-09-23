@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Eye, EyeOff, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -9,6 +10,7 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const router = useRouter();
 
   if (!isOpen) return null;
 
@@ -29,9 +31,21 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
       if (!response.ok) {
         setError(data.message || "Invalid credentials. Please try again.");
       } else {
-        localStorage.setItem("token", data.access_token);
-        alert(`Welcome, ${data.user.name || data.user.mobile}!`);
+        // ✅ use correct key from Laravel AuthController (it's "token")
+        localStorage.setItem("token", data.token);
+
+        // ✅ store user info for role-based navigation
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        alert(`Welcome, ${data.user.fullName || data.user.mobile}!`);
         onClose();
+
+        // ✅ redirect based on role
+        if (data.user.role === "admin") {
+          router.push("/admin/dashboard");
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch (err) {
       setError("Failed to connect to server. Check your backend URL.");
