@@ -5,12 +5,12 @@ import { Eye, EyeOff, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
-  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
 
   if (!isOpen) return null;
 
@@ -20,35 +20,32 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
     setError("");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/login", {
+      const api = process.env.NEXT_PUBLIC_API_URL;
+      const response = await fetch(`${api}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mobile, password }),
       });
 
       const data = await response.json();
-
       if (!response.ok) {
         setError(data.message || "Invalid credentials. Please try again.");
-      } else {
-        // ✅ use correct key from Laravel AuthController (it's "token")
-        localStorage.setItem("token", data.token);
-
-        // ✅ store user info for role-based navigation
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        alert(`Welcome, ${data.user.fullName || data.user.mobile}!`);
-        onClose();
-
-        // ✅ redirect based on role
-        if (data.user.role === "admin") {
-          router.push("/admin/dashboard");
-        } else {
-          router.push("/dashboard");
-        }
+        return;
       }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      const role = data.user?.role?.toLowerCase();
+      if (role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+
+      onClose();
     } catch (err) {
-      setError("Failed to connect to server. Check your backend URL.");
+      setError("Failed to connect to server. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -56,8 +53,8 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative animate-fadeIn">
-        {/* Close Button */}
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative">
+        {/* Close */}
         <button
           onClick={onClose}
           className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
@@ -82,7 +79,6 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Mobile */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Mobile Number
@@ -97,7 +93,6 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
             />
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Password
@@ -121,7 +116,6 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
             </div>
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -134,31 +128,6 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-
-        {/* Links */}
-        <div className="mt-6 text-center space-y-2">
-          <p className="text-sm text-gray-600">
-            Forgot your password?{" "}
-            <button
-              onClick={() => alert("Forgot password flow here")}
-              className="text-blue-600 hover:underline"
-            >
-              Reset here
-            </button>
-          </p>
-          <p className="text-sm text-gray-600">
-            Don’t have an account?{" "}
-            <button
-              onClick={() => {
-                onClose();
-                onOpenSignup();
-              }}
-              className="text-blue-600 hover:underline"
-            >
-              Sign up
-            </button>
-          </p>
-        </div>
       </div>
     </div>
   );
