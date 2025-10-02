@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   LayoutDashboard,
   Users,
@@ -17,7 +18,7 @@ import {
   GraduationCap,
   BarChart3,
   Video,
-  Shield
+  Shield,
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -55,64 +56,62 @@ export default function AdminLayout({ children }) {
     {
       title: "Management",
       items: [
-        { name: "Dashboard", icon: <LayoutDashboard size={18} /> },
-        { name: "Announcements", icon: <Megaphone size={18} /> },
-        { name: "Attendance", icon: <FileText size={18} /> },
-        { name: "Members", icon: <Users size={18} /> },
-        { name: "Visitors", icon: <Users size={18} /> },
-        { name: "Events", icon: <Calendar size={18} /> },
+        { name: "Dashboard", icon: <LayoutDashboard size={18} />, href: "/admin" },
+        { name: "Announcements", icon: <Megaphone size={18} />, href: "/admin/announcements" },
+        { name: "Attendance", icon: <FileText size={18} />, href: "/admin/attendance" },
+        { name: "Members", icon: <Users size={18} />, href: "/admin/members" },
+        { name: "Visitors", icon: <Users size={18} />, href: "/admin/visitors" },
+        { name: "Events", icon: <Calendar size={18} />, href: "/admin/events" },
       ],
     },
     {
       title: "Finance",
       items: [
-        { name: "Contributions", icon: <DollarSign size={18} /> },
-        { name: "Payments", icon: <DollarSign size={18} /> },
-        { name: "Expenses", icon: <DollarSign size={18} /> },
-        { name: "Accounting", icon: <FileText size={18} /> },
+        { name: "Contributions", icon: <DollarSign size={18} />, href: "/admin/contributions" },
+        { name: "Payments", icon: <DollarSign size={18} />, href: "/admin/payments" },
+        { name: "Expenses", icon: <DollarSign size={18} />, href: "/admin/expenses" },
+        { name: "Accounting", icon: <FileText size={18} />, href: "/admin/accounting" },
       ],
     },
     {
       title: "Engagement",
       items: [
-        { name: "Communications", icon: <Mail size={18} /> },
-        { name: "Meetings", icon: <Calendar size={18} /> },
-        { name: "Prayer Requests", icon: <MessageCircle size={18} /> },
+        { name: "Communications", icon: <Mail size={18} />, href: "/admin/communications" },
+        { name: "Meetings", icon: <Calendar size={18} />, href: "/admin/meetings" },
+        { name: "Prayer Requests", icon: <MessageCircle size={18} />, href: "/admin/prayers" },
       ],
     },
     {
       title: "Volunteers",
       items: [
-        { name: "Volunteer Scheduling", icon: <Handshake size={18} /> },
-        { name: "Ministry Groups", icon: <Users size={18} /> },
+        { name: "Volunteer Scheduling", icon: <Handshake size={18} />, href: "/admin/volunteers" },
+        { name: "Ministry Groups", icon: <Users size={18} />, href: "/admin/groups" },
       ],
     },
     {
       title: "Education",
       items: [
-        { name: "Sunday School", icon: <GraduationCap size={18} /> },
-        { name: "Bible Study", icon: <BookOpen size={18} /> },
+        { name: "Sunday School", icon: <GraduationCap size={18} />, href: "/admin/sunday-school" },
+        { name: "Bible Study", icon: <BookOpen size={18} />, href: "/admin/bible-study" },
       ],
     },
     {
       title: "Reports",
       items: [
-        { name: "Analytics", icon: <BarChart3 size={18} /> },
-        { name: "Growth Trends", icon: <BarChart3 size={18} /> },
+        { name: "Analytics", icon: <BarChart3 size={18} />, href: "/admin/reports/analytics" },
+        { name: "Growth Trends", icon: <BarChart3 size={18} />, href: "/admin/reports/growth" },
       ],
     },
     {
       title: "Resources",
       items: [
-        { name: "Books", icon: <BookOpen size={18} /> },
-        { name: "Sermons & Media", icon: <Video size={18} /> },
+        { name: "Books", icon: <BookOpen size={18} />, href: "/admin/resources/books" },
+        { name: "Sermons & Media", icon: <Video size={18} />, href: "/admin/resources/media" },
       ],
     },
     {
       title: "Administration",
-      items: [
-        { name: "Users", icon: <Shield size={18} /> },
-      ],
+      items: [{ name: "Users", icon: <Shield size={18} />, href: "/admin/users" }],
     },
   ];
 
@@ -131,14 +130,14 @@ export default function AdminLayout({ children }) {
               </h4>
               <div className="space-y-1">
                 {section.items.map((item, i) => (
-                  <a
+                  <Link
                     key={i}
-                    href="#"
+                    href={item.href}
                     className="flex items-center gap-2 py-2 px-4 rounded-md text-gray-700 hover:bg-green-100 hover:text-green-700 transition"
                   >
                     {item.icon}
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
