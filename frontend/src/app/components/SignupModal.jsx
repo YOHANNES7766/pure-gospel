@@ -65,7 +65,7 @@ export default function SignupModal({ isOpen, onClose, onOpenLogin }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative animate-fadeIn overflow-y-auto max-h-[90vh]">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative overflow-y-auto max-h-[90vh]">
         {/* Close */}
         <button
           onClick={onClose}
@@ -146,7 +146,7 @@ export default function SignupModal({ isOpen, onClose, onOpenLogin }) {
             </div>
           </div>
 
-          {/* Church Interests */}
+          {/* Interests */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               I am interested in:
@@ -215,7 +215,7 @@ export default function SignupModal({ isOpen, onClose, onOpenLogin }) {
           </button>
         </form>
 
-        {/* Links */}
+        {/* Login Redirect */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Already have an account?{" "}

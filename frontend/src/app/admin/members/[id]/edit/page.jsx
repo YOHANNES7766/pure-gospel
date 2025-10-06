@@ -4,7 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 
 export default function EditMemberPage() {
   const router = useRouter();
-  const params = useParams(); // Next.js 13+ app router
+  const params = useParams();
   const { id } = params;
 
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ export default function EditMemberPage() {
     status: "Active",
   });
 
-  // Fetch member by ID
+  // Fetch existing member details
   useEffect(() => {
     const fetchMember = async () => {
       try {
@@ -50,8 +50,8 @@ export default function EditMemberPage() {
 
         setLoading(false);
       } catch (err) {
-        console.error(err);
-        alert("Could not load member");
+        console.error("❌ Fetch error:", err);
+        alert("Could not load member info");
         router.push("/admin/members");
       }
     };
@@ -59,7 +59,7 @@ export default function EditMemberPage() {
     if (id) fetchMember();
   }, [id, router]);
 
-  // Handle input
+  // Handle form input
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -82,19 +82,20 @@ export default function EditMemberPage() {
 
       if (!res.ok) throw new Error("Failed to update member");
 
-      alert("Member updated successfully!");
-      router.push("/admin/members");
+      alert("✅ Member updated successfully!");
+      router.push(`/admin/members/${id}`); // Go back to view page
     } catch (err) {
-      console.error(err);
+      console.error("❌ Update error:", err);
       alert("Error: Could not update member");
     }
   };
 
-  if (loading) return <p className="p-6">Loading...</p>;
+  if (loading) return <p className="p-6 text-center">Loading member...</p>;
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-bold mb-8">Edit Member</h1>
+
       <form
         onSubmit={handleSubmit}
         className="bg-white shadow rounded-lg p-8 space-y-6"
@@ -109,45 +110,61 @@ export default function EditMemberPage() {
           <InputField label="Birth Date" name="birth_date" type="date" value={form.birth_date} onChange={handleChange} />
 
           {/* Gender */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Gender</label>
-            <select name="gender" value={form.gender} onChange={handleChange} className="mt-1 block w-full border rounded-md p-2">
-              <option value="">Select Gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-            </select>
-          </div>
+          <SelectField
+            label="Gender"
+            name="gender"
+            value={form.gender}
+            onChange={handleChange}
+            options={[
+              { value: "", label: "Select Gender" },
+              { value: "male", label: "Male" },
+              { value: "female", label: "Female" },
+            ]}
+          />
 
           {/* Group */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Church Group</label>
-            <select name="church_group" value={form.church_group} onChange={handleChange} className="mt-1 block w-full border rounded-md p-2">
-              <option value="">Select group</option>
-              <option value="Men">Men</option>
-              <option value="Women">Women</option>
-              <option value="Youth Men">Youth Men</option>
-              <option value="Youth Ladies">Youth Ladies</option>
-              <option value="Choir">Choir</option>
-              <option value="Elders">Elders</option>
-            </select>
-          </div>
+          <SelectField
+            label="Church Group"
+            name="church_group"
+            value={form.church_group}
+            onChange={handleChange}
+            options={[
+              { value: "", label: "Select group" },
+              { value: "Men", label: "Men" },
+              { value: "Women", label: "Women" },
+              { value: "Youth Men", label: "Youth Men" },
+              { value: "Youth Ladies", label: "Youth Ladies" },
+              { value: "Choir", label: "Choir" },
+              { value: "Elders", label: "Elders" },
+            ]}
+          />
 
           {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Status</label>
-            <select name="status" value={form.status} onChange={handleChange} className="mt-1 block w-full border rounded-md p-2">
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
+          <SelectField
+            label="Status"
+            name="status"
+            value={form.status}
+            onChange={handleChange}
+            options={[
+              { value: "Active", label: "Active" },
+              { value: "Inactive", label: "Inactive" },
+            ]}
+          />
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-4">
-          <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md">
+        <div className="flex gap-4 mt-6">
+          <button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+          >
             Save Changes
           </button>
-          <button type="button" onClick={() => router.push("/admin/members")} className="border px-6 py-2 rounded-md">
+          <button
+            type="button"
+            onClick={() => router.push(`/admin/members/${id}`)}
+            className="border px-6 py-2 rounded-md"
+          >
             Cancel
           </button>
         </div>
@@ -156,6 +173,7 @@ export default function EditMemberPage() {
   );
 }
 
+// Reusable input field
 function InputField({ label, name, value, onChange, type = "text" }) {
   return (
     <div>
@@ -163,10 +181,31 @@ function InputField({ label, name, value, onChange, type = "text" }) {
       <input
         type={type}
         name={name}
-        value={value}
+        value={value || ""}
         onChange={onChange}
         className="mt-1 block w-full border border-gray-300 rounded-md p-2"
       />
+    </div>
+  );
+}
+
+// Reusable select field
+function SelectField({ label, name, value, onChange, options }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <select
+        name={name}
+        value={value || ""}
+        onChange={onChange}
+        className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

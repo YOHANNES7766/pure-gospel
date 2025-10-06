@@ -10,14 +10,49 @@ export default function MemberForm() {
     status: "Active",
   });
 
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting Member:", form);
-    alert("Member Added!");
+    setLoading(true);
+
+    try {
+      const api = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${api}/api/members`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          full_name: form.name,
+          phone: form.phone,
+          category: form.category,
+          status: form.status,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to save member: ${res.status} - ${errorText}`);
+      }
+
+      const data = await res.json();
+      console.log("✅ Member saved:", data);
+      alert("🎉 Member successfully added!");
+      setForm({ name: "", phone: "", category: "Men", status: "Active" });
+    } catch (err) {
+      console.error("❌ Error saving member", err);
+      alert("Failed to add member. Check console for details.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,9 +118,10 @@ export default function MemberForm() {
       {/* Submit */}
       <button
         type="submit"
-        className="bg-green-600 text-white px-6 py-2 rounded shadow hover:bg-green-700"
+        disabled={loading}
+        className="bg-green-600 text-white px-6 py-2 rounded shadow hover:bg-green-700 disabled:opacity-50"
       >
-        Save Member
+        {loading ? "Saving..." : "Save Member"}
       </button>
     </form>
   );

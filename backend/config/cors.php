@@ -39,6 +39,6 @@ return [
     'max_age' => 0,
 
     // Whether to include cookies/authorization headers in cross-site requests
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 
 ];

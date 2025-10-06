@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Member;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -20,16 +22,25 @@ class AuthController extends Controller
             'member_status' => 'required|in:yes,no',
         ]);
 
-        // ✅ password hashing handled by User model ($casts)
+        // ✅ Create new user with hashed password
         $user = User::create([
             'fullName'      => $validated['fullName'],
             'mobile'        => $validated['mobile'],
-            'password'      => $validated['password'], // plain → auto-hashed
+            'password'      => Hash::make($validated['password']),
             'interests'     => $validated['interests'] ?? [],
             'member_status' => $validated['member_status'],
-            'role'          => 'user', // default
+            'role'          => 'user', // default role
         ]);
 
+        // ✅ Always create a Member record for every user
+        Member::create([
+            'user_id'   => $user->id,
+            'full_name' => $user->fullName,
+            'phone'     => $user->mobile,
+            'status'    => $user->member_status === 'yes' ? 'Active' : 'Pending',
+        ]);
+
+        // ✅ Create API token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -51,14 +62,13 @@ class AuthController extends Controller
 
         $user = User::where('mobile', $validated['mobile'])->first();
 
-        // ✅ Use Hash::check here because passwords are stored hashed
-        if (!$user || !\Hash::check($validated['password'], $user->password)) {
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
             return response()->json([
                 'message' => 'Invalid credentials',
             ], 401);
         }
 
-        // Delete old tokens (optional but cleaner)
+        // Delete old tokens (optional)
         $user->tokens()->delete();
 
         // Create new token

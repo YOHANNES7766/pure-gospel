@@ -1,42 +1,66 @@
+"use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
-export default function MemberTable() {
-  const members = [
-    {
-      id: 2345,
-      name: "Yohannes Dawit Bireda",
-      phone: "0965548360",
-      category: "Men",
-      status: "Active",
-      registration: "Pending",
-    },
-  ];
+export default function MemberTable({ search }) {
+  const [members, setMembers] = useState([]);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const api = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(`${api}/api/members`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        setMembers(data);
+      } catch (err) {
+        console.error("Failed to fetch members", err);
+      }
+    };
+
+    fetchMembers();
+  }, []);
+
+  // Filter search
+  const filtered = members.filter((m) =>
+    [m.full_name, m.phone, m.member_id]
+      .join(" ")
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
 
   return (
     <div className="bg-white shadow rounded-lg p-4">
-      {members.map((m) => (
+      {filtered.length === 0 && (
+        <p className="text-gray-500 text-center">No members found</p>
+      )}
+      {filtered.map((m) => (
         <div
           key={m.id}
           className="flex justify-between items-center border-b py-4"
         >
           <div>
-            <h3 className="font-semibold">{m.name} - {m.id}</h3>
+            <h3 className="font-semibold">
+              {m.full_name} - {m.member_id || m.id}
+            </h3>
             <p className="text-sm text-gray-500">{m.phone}</p>
           </div>
           <div className="flex gap-6 text-sm">
             <p>
-              <span className="font-semibold">Category:</span> {m.category}
+              <span className="font-semibold">Group:</span> {m.church_group}
             </p>
             <p>
               <span className="font-semibold">Status:</span>{" "}
-              <span className="px-2 py-1 rounded text-white bg-green-600">
+              <span
+                className={`px-2 py-1 rounded text-white ${
+                  m.status === "Active" ? "bg-green-600" : "bg-red-600"
+                }`}
+              >
                 {m.status}
-              </span>
-            </p>
-            <p>
-              <span className="font-semibold">Registration:</span>{" "}
-              <span className="px-2 py-1 rounded text-white bg-red-600">
-                {m.registration}
               </span>
             </p>
           </div>

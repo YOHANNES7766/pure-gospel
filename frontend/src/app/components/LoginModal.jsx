@@ -20,7 +20,7 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
     setError("");
 
     try {
-      const api = process.env.NEXT_PUBLIC_API_URL;
+      const api = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
       const response = await fetch(`${api}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -33,14 +33,22 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
         return;
       }
 
+      // Save auth data
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      // Role-based redirect
       const role = data.user?.role?.toLowerCase();
-      if (role === "admin") {
+
+      if (role === "superadmin" || role === "admin") {
         router.push("/admin");
+      } else if (role === "pastor") {
+        router.push("/pastor");
+      } else if (role === "member" || role === "user") {
+        router.push("/member");
       } else {
-        router.push("/dashboard");
+        setError("Unauthorized role. Please contact support.");
+        return;
       }
 
       onClose();
@@ -128,6 +136,22 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
+
+        {/* Signup Redirect */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Don’t have an account?{" "}
+            <button
+              onClick={() => {
+                onClose();
+                onOpenSignup?.();
+              }}
+              className="text-blue-600 hover:underline"
+            >
+              Sign Up
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -2,16 +2,32 @@
 
 import { useState } from "react";
 import LoginModal from "../components/LoginModal";
+import SignupModal from "../components/SignupModal";
 
 export default function LoginPage() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [showLogin, setShowLogin] = useState(true);
+  const [showSignup, setShowSignup] = useState(false);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      {/* Login Modal */}
       <LoginModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        onOpenSignup={() => alert("Open signup modal here")}
+        isOpen={showLogin}
+        onClose={() => setShowLogin(false)}
+        onOpenSignup={() => {
+          setShowLogin(false);
+          setShowSignup(true);
+        }}
+      />
+
+      {/* Signup Modal */}
+      <SignupModal
+        isOpen={showSignup}
+        onClose={() => setShowSignup(false)}
+        onOpenLogin={() => {
+          setShowSignup(false);
+          setShowLogin(true);
+        }}
       />
     </div>
   );

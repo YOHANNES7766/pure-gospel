@@ -10,9 +10,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Call Admin user seeder
-        $this->call(AdminUserSeeder::class);
+      //  $this->call(AdminUserSeeder::class);
 
         // Generate 10 demo users with factory
-        User::factory(10)->create();
+       // User::factory(10)->create();
     }
 }
