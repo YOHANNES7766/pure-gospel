@@ -1,6 +1,6 @@
 export default function AttendanceTable({ records }) {
   return (
-    <div className="overflow-x-auto bg-white shadow-md rounded-lg border">
+    <div className="overflow-x-auto bg-white shadow-sm rounded-lg border border-gray-200">
       <table className="min-w-full text-sm">
         <thead className="bg-gray-100 text-gray-800 text-left">
           <tr>

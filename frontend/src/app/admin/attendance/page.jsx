@@ -1,4 +1,5 @@
 "use client";
+
 import { useAttendance } from "./hooks/useAttendance";
 import AttendanceFilter from "./components/AttendanceFilter";
 import AttendanceTable from "./components/AttendanceTable";
@@ -17,10 +18,11 @@ export default function AttendancePage() {
   } = useAttendance();
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Attendance Records</h1>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold mb-4 text-gray-800">
+        Attendance Records
+      </h1>
 
-      {/* Filter & Actions */}
       <AttendanceFilter
         filter={filter}
         setFilter={setFilter}
@@ -30,10 +32,8 @@ export default function AttendancePage() {
         onSummaryPDF={summaryPDF}
       />
 
-      {/* Stats */}
       <AttendanceStats stats={stats} />
 
-      {/* Table */}
       <AttendanceTable records={records} />
     </div>
   );

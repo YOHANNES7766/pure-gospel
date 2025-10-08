@@ -17,16 +17,17 @@ class MemberController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'full_name'   => 'required|string|max:255',
-            'phone'       => 'nullable|string|max:20',
-            'email'       => 'nullable|email|unique:members,email',
-            'member_id'   => 'nullable|string|unique:members,member_id',
-            'id_number'   => 'nullable|string|max:50',
-            'birth_date'  => 'nullable|date',
-            'address'     => 'nullable|string|max:255',
-            'gender'      => 'nullable|in:male,female',
-            'church_group'=> 'nullable|string|max:50',
-            'status'      => 'nullable|in:Active,Inactive',
+            'full_name'    => 'required|string|max:255',
+            'phone'        => 'nullable|string|max:20',
+            'email'        => 'nullable|email|unique:members,email',
+            'member_id'    => 'nullable|string|unique:members,member_id',
+            'id_number'    => 'nullable|string|max:50',
+            'birth_date'   => 'nullable|date',
+            'address'      => 'nullable|string|max:255',
+            'gender' => 'nullable|in:male,female,Male,Female',
+            'church_group' => 'nullable|string|max:50',
+            // ✅ Allow "Active", "Inactive", and "Pending"
+            'status'       => 'nullable|in:Active,Inactive,Pending',
         ]);
 
         $member = Member::create($validated);
@@ -41,26 +42,35 @@ class MemberController extends Controller
     }
 
     // Update member
-    public function update(Request $request, $id)
-    {
-        $member = Member::findOrFail($id);
+ public function update(Request $request, $id)
+{
+    $member = Member::findOrFail($id);
 
-        $validated = $request->validate([
-            'full_name'   => 'sometimes|required|string|max:255',
-            'phone'       => 'nullable|string|max:20',
-            'email'       => 'nullable|email|unique:members,email,' . $id,
-            'member_id'   => 'nullable|string|unique:members,member_id,' . $id,
-            'id_number'   => 'nullable|string|max:50',
-            'birth_date'  => 'nullable|date',
-            'address'     => 'nullable|string|max:255',
-            'gender'      => 'nullable|in:male,female',
-            'church_group'=> 'nullable|string|max:50',
-            'status'      => 'nullable|in:Active,Inactive',
+    // 🔽 Normalize gender input
+    if ($request->has('gender')) {
+        $request->merge([
+            'gender' => strtolower($request->gender),
         ]);
-
-        $member->update($validated);
-        return response()->json($member);
     }
+
+    $validated = $request->validate([
+        'full_name'    => 'sometimes|required|string|max:255',
+        'phone'        => 'nullable|string|max:20',
+        'email'        => 'nullable|email|unique:members,email,' . $id,
+        'member_id'    => 'nullable|string|unique:members,member_id,' . $id,
+        'id_number'    => 'nullable|string|max:50',
+        'birth_date'   => 'nullable|date',
+        'address'      => 'nullable|string|max:255',
+        'gender'       => 'nullable|in:male,female',
+        'church_group' => 'nullable|string|max:50',
+        'status'       => 'nullable|in:Active,Inactive,Pending',
+        'member_category' => 'nullable|string|max:50',
+    ]);
+
+    $member->update($validated);
+    return response()->json($member);
+}
+
 
     // Delete member
     public function destroy($id)
@@ -76,6 +86,7 @@ class MemberController extends Controller
         return response()->json([
             ["label" => "Active Members", "value" => Member::where('status', 'Active')->count(), "color" => "bg-green-600"],
             ["label" => "Inactive Members", "value" => Member::where('status', 'Inactive')->count(), "color" => "bg-red-600"],
+            ["label" => "Pending Members", "value" => Member::where('status', 'Pending')->count(), "color" => "bg-yellow-500"],
             ["label" => "Men", "value" => Member::where('church_group', 'Men')->count(), "color" => "bg-blue-600"],
             ["label" => "Women", "value" => Member::where('church_group', 'Women')->count(), "color" => "bg-pink-600"],
             ["label" => "Youth Men", "value" => Member::where('church_group', 'Youth Men')->count(), "color" => "bg-indigo-600"],

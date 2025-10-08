@@ -7,7 +7,10 @@ import Link from "next/link";
 export default function MembersPage() {
   const [stats, setStats] = useState([]);
   const [members, setMembers] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [groupFilter, setGroupFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -16,7 +19,7 @@ export default function MembersPage() {
 
   // ✅ Fetch stats
   useEffect(() => {
-    if (!token) return; // Don't fetch if token is missing
+    if (!token) return;
     const fetchStats = async () => {
       try {
         setStatsLoading(true);
@@ -28,7 +31,7 @@ export default function MembersPage() {
         setStats(data);
       } catch (err) {
         console.error("❌ Stats fetch error", err);
-        setStats([]); // fallback
+        setStats([]);
       } finally {
         setStatsLoading(false);
       }
@@ -49,6 +52,7 @@ export default function MembersPage() {
         if (!res.ok) throw new Error("Failed to fetch members");
         const data = await res.json();
         setMembers(data);
+        setFiltered(data);
       } catch (err) {
         console.error("❌ Members fetch error", err);
         setMembers([]);
@@ -68,59 +72,116 @@ export default function MembersPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to delete member");
-
       setMembers((prev) => prev.filter((m) => m.id !== id));
+      setFiltered((prev) => prev.filter((m) => m.id !== id));
     } catch (err) {
       console.error("❌ Delete failed", err);
       alert("Failed to delete member");
     }
   };
 
-  // ✅ Filter members
-  const filtered = members.filter((m) =>
-    [m.full_name, m.phone, m.member_id].join(" ").toLowerCase().includes(search.toLowerCase())
-  );
+  // ✅ Filter logic
+  useEffect(() => {
+    let temp = members;
+
+    // Search
+    if (search.trim() !== "") {
+      temp = temp.filter((m) =>
+        [m.full_name, m.phone, m.member_id]
+          .join(" ")
+          .toLowerCase()
+          .includes(search.toLowerCase())
+      );
+    }
+
+    // Status
+    if (statusFilter !== "All") {
+      temp = temp.filter((m) => m.status === statusFilter);
+    }
+
+    // Group
+    if (groupFilter !== "All") {
+      temp = temp.filter((m) => m.church_group === groupFilter);
+    }
+
+    setFiltered(temp);
+  }, [search, statusFilter, groupFilter, members]);
+
+  // ✅ Extract unique groups
+  const groups = ["All", ...new Set(members.map((m) => m.church_group || "Unassigned"))];
 
   return (
     <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
-      {/* 📊 Stats */}
+      {/* 📊 Stats Section */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {statsLoading ? (
-          <div className="col-span-6 text-gray-400 text-center">Loading stats...</div>
+          <div className="col-span-6 text-gray-500 text-center py-4">Loading stats...</div>
         ) : stats.length === 0 ? (
-          <div className="col-span-6 text-gray-400 text-center">No stats found</div>
+          <div className="col-span-6 text-gray-500 text-center py-4">No stats found</div>
         ) : (
           stats.map((stat, idx) => (
             <div
               key={idx}
-              className="bg-white shadow p-4 rounded text-center border hover:shadow-lg transition"
+              className="bg-white shadow-sm p-4 rounded-lg text-center border border-gray-200 hover:shadow-md transition"
             >
-              <div className="text-xl font-bold text-blue-600">{stat.value}</div>
-              <p className="mt-1 font-medium text-gray-700">{stat.label}</p>
+              <div className="text-2xl font-bold text-gray-700">{stat.value}</div>
+              <p className="mt-1 font-medium text-gray-600">{stat.label}</p>
             </div>
           ))
         )}
       </div>
 
-      {/* 🧰 Actions */}
+      {/* 🧰 Filters + Actions */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-3">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, phone, or ID..."
-          className="border px-4 py-2 rounded w-full md:w-1/3"
-        />
-        <div className="space-x-3">
-          <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+        <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+          {/* 🔍 Search */}
+          <div className="flex items-center w-full md:w-80 bg-white border border-gray-300 rounded-md shadow-sm">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, phone, or ID..."
+              className="px-4 py-2 w-full focus:outline-none rounded-md"
+            />
+            <button className="bg-gray-700 text-white px-4 py-2 rounded-r-md">Search</button>
+          </div>
+
+          {/* 📋 Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border border-gray-300 rounded-md px-4 py-2 bg-white focus:ring-2 focus:ring-gray-300"
+          >
+            <option>All</option>
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+
+          {/* 🏷️ Group Filter */}
+          <select
+            value={groupFilter}
+            onChange={(e) => setGroupFilter(e.target.value)}
+            className="border border-gray-300 rounded-md px-4 py-2 bg-white focus:ring-2 focus:ring-gray-300"
+          >
+            {groups.map((g, i) => (
+              <option key={i} value={g}>
+                {g === "Unassigned" ? "No Group" : g}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* ➕ Buttons */}
+        <div className="flex flex-wrap gap-2 justify-end">
+          <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition">
             Import Members
           </button>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-            Export PDF
+          <button className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md transition">
+            Export to PDF
           </button>
           <Link
             href="/admin/members/new"
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded inline-block"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md inline-block transition"
           >
             Add New Member
           </Link>
@@ -128,53 +189,55 @@ export default function MembersPage() {
       </div>
 
       {/* 👥 Members Table */}
-      <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
+      <div className="bg-white shadow-md rounded-xl overflow-hidden border border-gray-200">
         {loading ? (
           <p className="text-center text-gray-500 py-6">Loading members...</p>
         ) : filtered.length === 0 ? (
           <p className="text-gray-500 text-center py-6">No members found</p>
         ) : (
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-100 text-left">
+            <thead className="bg-gray-200 text-gray-800 uppercase text-xs tracking-wider border-b">
               <tr>
-                <th className="p-3">Name</th>
-                <th className="p-3">Phone</th>
-                <th className="p-3">Group</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Actions</th>
+                <th className="px-4 py-3 text-left font-semibold">Name</th>
+                <th className="px-4 py-3 text-left font-semibold">Phone</th>
+                <th className="px-4 py-3 text-left font-semibold">Group</th>
+                <th className="px-4 py-3 text-left font-semibold">Status</th>
+                <th className="px-4 py-3 text-left font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-white divide-y divide-gray-100 text-gray-800">
               {filtered.map((m) => (
-                <tr key={m.id} className="border-t hover:bg-gray-50 transition-colors">
-                  <td className="p-3 font-semibold">{m.full_name}</td>
-                  <td className="p-3">{m.phone}</td>
-                  <td className="p-3">{m.church_group}</td>
-                  <td className="p-3">
+                <tr key={m.id} className="hover:bg-gray-50 transition">
+                  <td className="px-4 py-3 font-medium">{m.full_name}</td>
+                  <td className="px-4 py-3">{m.phone}</td>
+                  <td className="px-4 py-3">{m.church_group || "—"}</td>
+                  <td className="px-4 py-3">
                     <span
-                      className={`px-2 py-1 rounded text-xs font-medium text-white ${
-                        m.status === "Active" ? "bg-green-600" : "bg-red-600"
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        m.status === "Active"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : "bg-red-100 text-red-700 border border-red-300"
                       }`}
                     >
                       {m.status}
                     </span>
                   </td>
-                  <td className="p-3 space-x-2">
+                  <td className="px-4 py-3 flex flex-wrap gap-2">
                     <Link
                       href={`/admin/members/${m.id}`}
-                      className="px-3 py-1 border rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
+                      className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium transition"
                     >
                       View
                     </Link>
                     <Link
                       href={`/admin/members/${m.id}/edit`}
-                      className="px-3 py-1 border rounded bg-orange-100 text-orange-700 hover:bg-orange-200"
+                      className="px-3 py-1 rounded-md bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium transition"
                     >
                       Edit
                     </Link>
                     <button
                       onClick={() => handleDelete(m.id)}
-                      className="px-3 py-1 border rounded bg-red-100 text-red-700 hover:bg-red-200"
+                      className="px-3 py-1 rounded-md bg-red-100 text-red-700 hover:bg-red-200 font-medium transition"
                     >
                       Delete
                     </button>

@@ -1,172 +1,109 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { Loader2, ArrowLeft } from "lucide-react";
 
-export default function EditMemberPage() {
+export default function MemberInfoPage() {
   const router = useRouter();
-  const params = useParams(); // Next.js 13+ app router
-  const { id } = params;
-
+  const { id } = useParams();
+  const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    member_id: "",
-    id_number: "",
-    birth_date: "",
-    address: "",
-    gender: "",
-    church_group: "",
-    status: "Active",
-  });
 
-  // Fetch member by ID
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
   useEffect(() => {
     const fetchMember = async () => {
       try {
-        const api = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
         const token = localStorage.getItem("token");
+        if (!token) {
+          router.push("/login");
+          return;
+        }
 
-        const res = await fetch(`${api}/api/members/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetch(`${API_URL}/api/members/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+          mode: "cors",
+          credentials: "include",
         });
 
-        if (!res.ok) throw new Error("Failed to fetch member");
+        if (!res.ok) throw new Error("Failed to load member info");
         const data = await res.json();
-
-        setForm({
-          full_name: data.full_name || "",
-          email: data.email || "",
-          phone: data.phone || "",
-          member_id: data.member_id || "",
-          id_number: data.id_number || "",
-          birth_date: data.birth_date || "",
-          address: data.address || "",
-          gender: data.gender || "",
-          church_group: data.church_group || "",
-          status: data.status || "Active",
-        });
-
-        setLoading(false);
+        setMember(data);
       } catch (err) {
-        console.error(err);
-        alert("Could not load member");
-        router.push("/admin/members");
+        console.error("❌ Fetch error:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
     if (id) fetchMember();
   }, [id, router]);
 
-  // Handle input
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-600 text-lg">
+        <Loader2 className="animate-spin w-6 h-6 mr-2" /> Loading member info...
+      </div>
+    );
 
-  // Submit update
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const api = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(`${api}/api/members/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(form),
-      });
-
-      if (!res.ok) throw new Error("Failed to update member");
-
-      alert("Member updated successfully!");
-      router.push("/admin/members");
-    } catch (err) {
-      console.error(err);
-      alert("Error: Could not update member");
-    }
-  };
-
-  if (loading) return <p className="p-6">Loading...</p>;
+  if (!member)
+    return (
+      <div className="p-8 text-center text-red-500">
+        Member not found or unable to load data.
+      </div>
+    );
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold mb-8">Edit Member</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow rounded-lg p-8 space-y-6"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InputField label="Full Name" name="full_name" value={form.full_name} onChange={handleChange} />
-          <InputField label="Phone" name="phone" value={form.phone} onChange={handleChange} />
-          <InputField label="Email" name="email" value={form.email} onChange={handleChange} />
-          <InputField label="Member ID" name="member_id" value={form.member_id} onChange={handleChange} />
-          <InputField label="ID Number" name="id_number" value={form.id_number} onChange={handleChange} />
-          <InputField label="Address" name="address" value={form.address} onChange={handleChange} />
-          <InputField label="Birth Date" name="birth_date" type="date" value={form.birth_date} onChange={handleChange} />
-
-          {/* Gender */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Gender</label>
-            <select name="gender" value={form.gender} onChange={handleChange} className="mt-1 block w-full border rounded-md p-2">
-              <option value="">Select Gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-            </select>
-          </div>
-
-          {/* Group */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Church Group</label>
-            <select name="church_group" value={form.church_group} onChange={handleChange} className="mt-1 block w-full border rounded-md p-2">
-              <option value="">Select group</option>
-              <option value="Men">Men</option>
-              <option value="Women">Women</option>
-              <option value="Youth Men">Youth Men</option>
-              <option value="Youth Ladies">Youth Ladies</option>
-              <option value="Choir">Choir</option>
-              <option value="Elders">Elders</option>
-            </select>
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Status</label>
-            <select name="status" value={form.status} onChange={handleChange} className="mt-1 block w-full border rounded-md p-2">
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex gap-4">
-          <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md">
-            Save Changes
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={() => router.push("/admin/members")}
+            className="flex items-center text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeft size={18} className="mr-2" /> Back to Members
           </button>
-          <button type="button" onClick={() => router.push("/admin/members")} className="border px-6 py-2 rounded-md">
-            Cancel
+
+          <button
+            onClick={() => router.push(`/admin/members/${id}/edit`)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Edit Member
           </button>
         </div>
-      </form>
+
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+          {member.full_name}
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
+          <Info label="Email" value={member.email} />
+          <Info label="Phone" value={member.phone} />
+          <Info label="Member ID" value={member.member_id} />
+          <Info label="ID Number" value={member.id_number} />
+          <Info label="Birth Date" value={member.birth_date} />
+          <Info label="Address" value={member.address} />
+          <Info label="Gender" value={member.gender} />
+          <Info label="Status" value={member.status} />
+          <Info label="Member Category" value={member.member_category} />
+          <Info label="Church Group" value={member.church_group} />
+        </div>
+      </div>
     </div>
   );
 }
 
-function InputField({ label, name, value, onChange, type = "text" }) {
+function Info({ label, value }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-      />
+    <div className="flex flex-col border-b pb-2">
+      <span className="text-sm text-gray-500">{label}</span>
+      <span className="text-base font-medium text-gray-800">
+        {value || "—"}
+      </span>
     </div>
   );
 }
