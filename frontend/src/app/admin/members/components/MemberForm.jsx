@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function MemberForm() {
   const [form, setForm] = useState({
@@ -24,6 +25,19 @@ export default function MemberForm() {
       const api = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
       const token = localStorage.getItem("token");
 
+      // ✅ Frontend validation
+      if (!form.name.trim() || !form.phone.trim()) {
+        toast.error("Full name and phone number are required!");
+        setLoading(false);
+        return;
+      }
+
+      if (!token) {
+        toast.error("You are not logged in!");
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch(`${api}/api/members`, {
         method: "POST",
         headers: {
@@ -38,18 +52,34 @@ export default function MemberForm() {
         }),
       });
 
+      // ✅ If server returns an error response
       if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Failed to save member: ${res.status} - ${errorText}`);
+        let message = "Something went wrong while saving the member.";
+
+        try {
+          const data = await res.json();
+          message =
+            data.message ||
+            Object.values(data.errors || {})[0]?.[0] ||
+            `Server responded with ${res.status}`;
+        } catch {
+          // Fallback if the response is not JSON (e.g., HTML error page)
+          message = `Server error: ${res.status}`;
+        }
+
+        throw new Error(message);
       }
 
+      // ✅ If successful
       const data = await res.json();
       console.log("✅ Member saved:", data);
-      alert("🎉 Member successfully added!");
+      toast.success("🎉 Member successfully added!");
+
+      // Reset form
       setForm({ name: "", phone: "", category: "Men", status: "Active" });
     } catch (err) {
-      console.error("❌ Error saving member", err);
-      alert("Failed to add member. Check console for details.");
+      console.error("❌ Error saving member:", err);
+      toast.error(err.message || "Failed to save member. Please try again.");
     } finally {
       setLoading(false);
     }

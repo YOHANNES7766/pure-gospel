@@ -1,91 +1,105 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 
-export default function MemberInfoPage() {
-  const router = useRouter();
+// ✅ Helper to format fields consistently
+function Info({ label, value }) {
+  return (
+    <div className="flex flex-col">
+      <span className="text-sm font-medium text-gray-500">{label}</span>
+      <span className="text-base text-gray-800">
+        {value ? value : "—"}
+      </span>
+    </div>
+  );
+}
+
+// ✅ Helper to calculate age from birth date
+function calculateAge(birthDate) {
+  if (!birthDate) return "—";
+  const dob = new Date(birthDate);
+  const diff = Date.now() - dob.getTime();
+  const age = new Date(diff).getUTCFullYear() - 1970;
+  return age > 0 ? `${age} years` : "—";
+}
+
+export default function MemberDetailPage() {
   const { id } = useParams();
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+  const api = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
+  // ✅ Fetch a single member by ID
   useEffect(() => {
+    if (!id || !token) return;
+
     const fetchMember = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          router.push("/login");
-          return;
-        }
-
-        const res = await fetch(`${API_URL}/api/members/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-          mode: "cors",
-          credentials: "include",
+        setLoading(true);
+        const res = await fetch(`${api}/api/members/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!res.ok) throw new Error("Failed to load member info");
+        if (!res.ok) throw new Error("Failed to fetch member details");
         const data = await res.json();
         setMember(data);
       } catch (err) {
-        console.error("❌ Fetch error:", err);
+        console.error("❌ Member fetch error:", err);
+        setMember(null);
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) fetchMember();
-  }, [id, router]);
+    fetchMember();
+  }, [id, api, token]);
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-600 text-lg">
-        <Loader2 className="animate-spin w-6 h-6 mr-2" /> Loading member info...
+      <div className="flex justify-center items-center min-h-screen text-gray-500">
+        Loading member details...
       </div>
     );
+  }
 
-  if (!member)
+  if (!member) {
     return (
-      <div className="p-8 text-center text-red-500">
-        Member not found or unable to load data.
+      <div className="flex justify-center items-center min-h-screen text-gray-500">
+        Member not found.
       </div>
     );
+  }
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        <div className="flex justify-between items-center mb-6">
-          <button
-            onClick={() => router.push("/admin/members")}
-            className="flex items-center text-gray-600 hover:text-gray-800"
-          >
-            <ArrowLeft size={18} className="mr-2" /> Back to Members
-          </button>
+    <div className="p-6 bg-gray-50 min-h-screen space-y-8">
+      {/* 🔙 Back button */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-semibold text-gray-800">
+          Member Details
+        </h1>
+        <Link
+          href="/admin/members"
+          className="text-indigo-600 hover:text-indigo-800 font-medium"
+        >
+          ← Back to Members
+        </Link>
+      </div>
 
-          <button
-            onClick={() => router.push(`/admin/members/${id}/edit`)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Edit Member
-          </button>
-        </div>
-
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">
-          {member.full_name}
-        </h2>
-
+      {/* 🧾 Member Details Card */}
+      <div className="bg-white shadow-md rounded-xl border border-gray-200 p-6 space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
+          <Info label="Full Name" value={member.full_name} />
           <Info label="Email" value={member.email} />
           <Info label="Phone" value={member.phone} />
           <Info label="Member ID" value={member.member_id} />
           <Info label="ID Number" value={member.id_number} />
           <Info label="Birth Date" value={member.birth_date} />
+          <Info label="Age" value={calculateAge(member.birth_date)} />
           <Info label="Address" value={member.address} />
           <Info label="Gender" value={member.gender} />
           <Info label="Status" value={member.status} />
@@ -93,17 +107,23 @@ export default function MemberInfoPage() {
           <Info label="Church Group" value={member.church_group} />
         </div>
       </div>
-    </div>
-  );
-}
 
-function Info({ label, value }) {
-  return (
-    <div className="flex flex-col border-b pb-2">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-base font-medium text-gray-800">
-        {value || "—"}
-      </span>
+      {/* ✏️ Edit + Delete Buttons */}
+      <div className="flex gap-3">
+        <Link
+          href={`/admin/members/${member.id}/edit`}
+          className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md"
+        >
+          Edit Member
+        </Link>
+
+        <Link
+          href="/admin/members"
+          className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
+        >
+          Back
+        </Link>
+      </div>
     </div>
   );
 }

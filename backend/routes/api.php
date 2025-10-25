@@ -6,17 +6,25 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\AttendanceController;
 
-// Public routes
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
 Route::post('/signup', [AuthController::class, 'signup']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Protected admin-only routes
+/*
+|--------------------------------------------------------------------------
+| Protected Admin Routes
+|--------------------------------------------------------------------------
+|
+| ✅ Admin routes are protected by Sanctum and the 'admin' middleware
+| Admins can manage members, view dashboards, and handle attendance.
+|
+*/
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'index']);
-});
-
-// Authenticated routes (for all logged-in users)
-Route::middleware(['auth:sanctum'])->group(function () {
 
     // =====================
     // MEMBERS ROUTES
@@ -34,11 +42,34 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/attendance/stats', [AttendanceController::class, 'stats']);
     Route::get('/attendance', [AttendanceController::class, 'index']);
     Route::post('/attendance', [AttendanceController::class, 'store']);
-
-    // ✅ Must be ABOVE /attendance/{id} to avoid 404 conflict
     Route::get('/attendance/members', [AttendanceController::class, 'getActiveMembers']);
-
     Route::get('/attendance/{id}', [AttendanceController::class, 'show']);
     Route::put('/attendance/{id}', [AttendanceController::class, 'update']);
     Route::delete('/attendance/{id}', [AttendanceController::class, 'destroy']);
+
+
+
+    // =====================
+// VISITORS ROUTES
+// =====================
+Route::get('/visitors/stats', [VisitorController::class, 'stats']);
+Route::get('/visitors', [VisitorController::class, 'index']);
+Route::post('/visitors', [VisitorController::class, 'store']);
+Route::get('/visitors/{id}', [VisitorController::class, 'show']);
+Route::put('/visitors/{id}', [VisitorController::class, 'update']);
+Route::delete('/visitors/{id}', [VisitorController::class, 'destroy']);
+
 });
+
+/*
+|--------------------------------------------------------------------------
+| Local Testing Route (No Auth)
+|--------------------------------------------------------------------------
+|
+| ⚠️ TEMPORARY: allows you to test member creation without token
+| Remove this route in production once authentication works.
+|
+*/
+if (app()->environment('local')) {
+    Route::post('/members/test-create', [MemberController::class, 'store']);
+}

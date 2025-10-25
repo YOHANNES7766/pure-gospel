@@ -13,7 +13,7 @@ class AdminUserSeeder extends Seeder
             ['mobile' => '0965548360'],
             [
                 'fullName' => 'Super Admin',
-                'password' => 'admin123', // ✅ plain text — will be hashed by model
+                'password' => 'admin123', // plain text (mutator will hash it)
                 'role' => 'admin',
                 'member_status' => 'yes',
             ]

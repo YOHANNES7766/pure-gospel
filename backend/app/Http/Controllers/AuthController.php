@@ -22,11 +22,11 @@ class AuthController extends Controller
             'member_status' => 'required|in:yes,no',
         ]);
 
-        // ✅ Create new user with hashed password
+        // ✅ Create new user (password will be hashed by the model mutator)
         $user = User::create([
             'fullName'      => $validated['fullName'],
             'mobile'        => $validated['mobile'],
-            'password'      => Hash::make($validated['password']),
+            'password'      => $validated['password'], // plain password only
             'interests'     => $validated['interests'] ?? [],
             'member_status' => $validated['member_status'],
             'role'          => 'user', // default role
@@ -60,7 +60,19 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
+        // ✅ Trim whitespace to avoid hidden spaces or newlines
+        $validated['mobile'] = trim($validated['mobile']);
+        $validated['password'] = trim($validated['password']);
+
         $user = User::where('mobile', $validated['mobile'])->first();
+
+        \Log::info('Login attempt', [
+            'input_mobile'     => $validated['mobile'],
+            'user_found'       => $user ? true : false,
+            'stored_mobile'    => $user?->mobile,
+            'password_match'   => $user ? Hash::check($validated['password'], $user->password) : false,
+            'stored_password'  => $user?->password,
+        ]);
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             return response()->json([
@@ -68,10 +80,8 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Delete old tokens (optional)
         $user->tokens()->delete();
 
-        // Create new token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
