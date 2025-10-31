@@ -102,7 +102,7 @@ class AuthController extends Controller
             'message' => 'Logged out successfully',
         ]);
     }
-
+    
     /**
      * Helper: format user response
      */

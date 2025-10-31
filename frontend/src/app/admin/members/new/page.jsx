@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { useTheme } from "../../../context/ThemeContext";
 
 export default function AddMemberPage() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
@@ -69,7 +71,7 @@ export default function AddMemberPage() {
       }
 
       if (!res.ok) {
-        // 🧩 Handle all backend statuses gracefully
+        // 🧩 Handle backend statuses gracefully
         if (res.status === 401) {
           toast.error("Session expired. Please log in again.");
           router.push("/login");
@@ -112,28 +114,82 @@ export default function AddMemberPage() {
   };
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold mb-8 text-gray-800">Add New Member</h1>
+    <div className={`p-8 min-h-screen ${theme === "dark" ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-800"}`}>
+      <h1 className={`text-2xl font-bold mb-8 ${theme === "dark" ? "text-gray-100" : "text-gray-800"}`}>
+        Add New Member
+      </h1>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white shadow-md rounded-lg p-8 space-y-6 border border-gray-200"
+        className={`${theme === "dark" ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-md rounded-lg p-8 space-y-6 border`}
       >
         {/* Top-level error banner */}
         {formError && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div className={`${theme === "dark" ? "bg-red-900/30 border-red-700 text-red-200" : "bg-red-100 border-red-400 text-red-700"} border px-4 py-3 rounded`}>
             {formError}
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InputField label="Full Name" name="full_name" value={form.full_name} onChange={handleChange} required error={errors.full_name} />
-          <InputField label="Email" name="email" type="email" value={form.email} onChange={handleChange} error={errors.email} />
-          <InputField label="Phone" name="phone" value={form.phone} onChange={handleChange} error={errors.phone} />
-          <InputField label="Member ID" name="member_id" value={form.member_id} onChange={handleChange} error={errors.member_id} />
-          <InputField label="ID Number" name="id_number" value={form.id_number} onChange={handleChange} error={errors.id_number} />
-          <InputField label="Birth Date" name="birth_date" type="date" value={form.birth_date} onChange={handleChange} error={errors.birth_date} />
-          <InputField label="Address" name="address" value={form.address} onChange={handleChange} error={errors.address} />
+          <InputField
+            label="Full Name"
+            name="full_name"
+            value={form.full_name}
+            onChange={handleChange}
+            required
+            error={errors.full_name}
+            theme={theme}
+          />
+          <InputField
+            label="Email"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            error={errors.email}
+            theme={theme}
+          />
+          <InputField
+            label="Phone"
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+            error={errors.phone}
+            theme={theme}
+          />
+          <InputField
+            label="Member ID"
+            name="member_id"
+            value={form.member_id}
+            onChange={handleChange}
+            error={errors.member_id}
+            theme={theme}
+          />
+          <InputField
+            label="ID Number"
+            name="id_number"
+            value={form.id_number}
+            onChange={handleChange}
+            error={errors.id_number}
+            theme={theme}
+          />
+          <InputField
+            label="Birth Date"
+            name="birth_date"
+            type="date"
+            value={form.birth_date}
+            onChange={handleChange}
+            error={errors.birth_date}
+            theme={theme}
+          />
+          <InputField
+            label="Address"
+            name="address"
+            value={form.address}
+            onChange={handleChange}
+            error={errors.address}
+            theme={theme}
+          />
 
           <SelectField
             label="Gender"
@@ -146,6 +202,7 @@ export default function AddMemberPage() {
               { value: "Female", label: "Female" },
             ]}
             error={errors.gender}
+            theme={theme}
           />
 
           <SelectField
@@ -160,6 +217,7 @@ export default function AddMemberPage() {
               { value: "New Convert", label: "New Convert" },
             ]}
             error={errors.member_category}
+            theme={theme}
           />
 
           <SelectField
@@ -177,6 +235,7 @@ export default function AddMemberPage() {
               { value: "Elders", label: "Elders" },
             ]}
             error={errors.church_group}
+            theme={theme}
           />
 
           <SelectField
@@ -190,6 +249,7 @@ export default function AddMemberPage() {
               { value: "Pending", label: "Pending" },
             ]}
             error={errors.status}
+            theme={theme}
           />
         </div>
 
@@ -197,7 +257,7 @@ export default function AddMemberPage() {
           <button
             type="button"
             onClick={() => router.push("/admin/members")}
-            className="border border-gray-300 px-6 py-2 rounded-md hover:bg-gray-100 transition"
+            className={`border px-6 py-2 rounded-md hover:${theme === "dark" ? "bg-gray-700" : "bg-gray-100"} transition ${theme === "dark" ? "border-gray-600" : "border-gray-300"}`}
           >
             Cancel
           </button>
@@ -206,7 +266,9 @@ export default function AddMemberPage() {
             type="submit"
             disabled={loading}
             className={`px-6 py-2 rounded-md text-white font-medium transition ${
-              loading ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : `${theme === "dark" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-indigo-600 hover:bg-indigo-700"}`
             }`}
           >
             {loading ? "Saving..." : "Add Member"}
@@ -218,10 +280,10 @@ export default function AddMemberPage() {
 }
 
 /* ✅ Reusable input field */
-function InputField({ label, name, value, onChange, type = "text", required = false, error }) {
+function InputField({ label, name, value, onChange, type = "text", required = false, error, theme }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className={`block text-sm font-medium mb-1 ${theme === "dark" ? "text-gray-200" : "text-gray-700"}`}>
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <input
@@ -230,8 +292,8 @@ function InputField({ label, name, value, onChange, type = "text", required = fa
         value={value}
         onChange={onChange}
         required={required}
-        className={`block w-full border rounded-md p-2 focus:ring focus:ring-indigo-200 ${
-          error ? "border-red-500" : "border-gray-300"
+        className={`block w-full border rounded-md p-2 focus:ring ${theme === "dark" ? "focus:ring-indigo-400 bg-gray-700 text-gray-100" : "focus:ring-indigo-200 bg-white text-gray-800"} ${
+          error ? "border-red-500" : (theme === "dark" ? "border-gray-600" : "border-gray-300")
         }`}
       />
       {error && (
@@ -244,18 +306,18 @@ function InputField({ label, name, value, onChange, type = "text", required = fa
 }
 
 /* ✅ Reusable select field */
-function SelectField({ label, name, value, onChange, options, error }) {
+function SelectField({ label, name, value, onChange, options, error, theme }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className={`block text-sm font-medium mb-1 ${theme === "dark" ? "text-gray-200" : "text-gray-700"}`}>
         {label}
       </label>
       <select
         name={name}
         value={value}
         onChange={onChange}
-        className={`block w-full border rounded-md p-2 bg-white focus:ring focus:ring-indigo-200 ${
-          error ? "border-red-500" : "border-gray-300"
+        className={`block w-full border rounded-md p-2 focus:ring ${theme === "dark" ? "focus:ring-indigo-400 bg-gray-700 text-gray-100" : "focus:ring-indigo-200 bg-white text-gray-800"} ${
+          error ? "border-red-500" : (theme === "dark" ? "border-gray-600" : "border-gray-300")
         }`}
       >
         {options.map((opt, idx) => (

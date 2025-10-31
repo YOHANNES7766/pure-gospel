@@ -5,7 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\AttendanceController;
-
+use App\Http\Controllers\VisitorController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes

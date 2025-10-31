@@ -4,13 +4,14 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useTheme } from "../../../context/ThemeContext";
 
 // ✅ Helper to format fields consistently
-function Info({ label, value }) {
+function Info({ label, value, theme }) {
   return (
     <div className="flex flex-col">
-      <span className="text-sm font-medium text-gray-500">{label}</span>
-      <span className="text-base text-gray-800">
+      <span className={`text-sm font-medium ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>{label}</span>
+      <span className={`text-base ${theme === "dark" ? "text-gray-100" : "text-gray-800"}`}>
         {value ? value : "—"}
       </span>
     </div>
@@ -28,6 +29,7 @@ function calculateAge(birthDate) {
 
 export default function MemberDetailPage() {
   const { id } = useParams();
+  const { theme } = useTheme();
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +63,7 @@ export default function MemberDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen text-gray-500">
+      <div className={`flex justify-center items-center min-h-screen ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
         Loading member details...
       </div>
     );
@@ -69,42 +71,42 @@ export default function MemberDetailPage() {
 
   if (!member) {
     return (
-      <div className="flex justify-center items-center min-h-screen text-gray-500">
+      <div className={`flex justify-center items-center min-h-screen ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}>
         Member not found.
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen space-y-8">
+    <div className={`p-6 min-h-screen space-y-8 ${theme === "dark" ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-800"}`}>
       {/* 🔙 Back button */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-800">
+        <h1 className={`text-2xl font-semibold ${theme === "dark" ? "text-gray-100" : "text-gray-800"}`}>
           Member Details
         </h1>
         <Link
           href="/admin/members"
-          className="text-indigo-600 hover:text-indigo-800 font-medium"
+          className={`${theme === "dark" ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-800"} font-medium`}
         >
           ← Back to Members
         </Link>
       </div>
 
       {/* 🧾 Member Details Card */}
-      <div className="bg-white shadow-md rounded-xl border border-gray-200 p-6 space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
-          <Info label="Full Name" value={member.full_name} />
-          <Info label="Email" value={member.email} />
-          <Info label="Phone" value={member.phone} />
-          <Info label="Member ID" value={member.member_id} />
-          <Info label="ID Number" value={member.id_number} />
-          <Info label="Birth Date" value={member.birth_date} />
-          <Info label="Age" value={calculateAge(member.birth_date)} />
-          <Info label="Address" value={member.address} />
-          <Info label="Gender" value={member.gender} />
-          <Info label="Status" value={member.status} />
-          <Info label="Member Category" value={member.member_category} />
-          <Info label="Church Group" value={member.church_group} />
+      <div className={`${theme === "dark" ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} shadow-md rounded-xl border p-6 space-y-6`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+          <Info label="Full Name" value={member.full_name} theme={theme} />
+          <Info label="Email" value={member.email} theme={theme} />
+          <Info label="Phone" value={member.phone} theme={theme} />
+          <Info label="Member ID" value={member.member_id} theme={theme} />
+          <Info label="ID Number" value={member.id_number} theme={theme} />
+          <Info label="Birth Date" value={member.birth_date} theme={theme} />
+          <Info label="Age" value={calculateAge(member.birth_date)} theme={theme} />
+          <Info label="Address" value={member.address} theme={theme} />
+          <Info label="Gender" value={member.gender} theme={theme} />
+          <Info label="Status" value={member.status} theme={theme} />
+          <Info label="Member Category" value={member.member_category} theme={theme} />
+          <Info label="Church Group" value={member.church_group} theme={theme} />
         </div>
       </div>
 

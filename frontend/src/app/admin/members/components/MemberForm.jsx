@@ -1,3 +1,4 @@
+// components/MemberForm.jsx
 "use client";
 
 import { useState } from "react";
@@ -38,6 +39,20 @@ export default function MemberForm() {
         return;
       }
 
+      // Fetch current members to calculate member_id
+      const resCount = await fetch(`${api}/api/members`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!resCount.ok) {
+        throw new Error("Failed to fetch current members count");
+      }
+
+      const dataCount = await resCount.json();
+      const memberId = (dataCount.length + 1).toString(); // Start from 1, as string
+
       const res = await fetch(`${api}/api/members`, {
         method: "POST",
         headers: {
@@ -49,6 +64,7 @@ export default function MemberForm() {
           phone: form.phone,
           category: form.category,
           status: form.status,
+          member_id: memberId,
         }),
       });
 

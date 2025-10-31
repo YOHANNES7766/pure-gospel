@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Visitor;
@@ -11,8 +10,16 @@ class VisitorController extends Controller
 {
     public function index()
     {
-        $visits = Visitor::with(['member', 'pastor'])->latest()->get();
-        return response()->json($visits, 200);
+        try {
+            $visits = Visitor::with(['member', 'pastor'])->latest()->get();
+            return response()->json($visits, 200);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching visitors: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Internal server error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)
@@ -44,67 +51,97 @@ class VisitorController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $e->errors(),
             ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error creating visitor: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Internal server error',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
     public function show($id)
     {
-        $visit = Visitor::with(['member', 'pastor'])->find($id);
-
-        if (!$visit) {
+        try {
+            $visit = Visitor::with(['member', 'pastor'])->findOrFail($id);
+            return response()->json($visit, 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['message' => 'Visitor record not found'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error showing visitor: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Internal server error',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json($visit, 200);
     }
 
     public function update(Request $request, $id)
     {
-        $visitor = Visitor::find($id);
+        try {
+            $visitor = Visitor::findOrFail($id);
 
-        if (!$visitor) {
+            $validated = $request->validate([
+                'visit_status' => 'nullable|in:Visited,Not Visited',
+                'remarks' => 'nullable|string',
+            ]);
+
+            $visitor->update($validated);
+
+            return response()->json([
+                'message' => 'Visitor record updated successfully',
+                'data' => $visitor,
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['message' => 'Visitor record not found'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error updating visitor: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Internal server error',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $validated = $request->validate([
-            'visit_status' => 'nullable|in:Visited,Not Visited',
-            'remarks' => 'nullable|string',
-        ]);
-
-        $visitor->update($validated);
-
-        return response()->json([
-            'message' => 'Visitor record updated successfully',
-            'data' => $visitor,
-        ], 200);
     }
 
     public function destroy($id)
     {
-        $visitor = Visitor::find($id);
+        try {
+            $visitor = Visitor::findOrFail($id);
+            $visitor->delete();
 
-        if (!$visitor) {
+            return response()->json(['message' => 'Visitor record deleted successfully'], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['message' => 'Visitor record not found'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error deleting visitor: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Internal server error',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $visitor->delete();
-
-        return response()->json(['message' => 'Visitor record deleted successfully'], 200);
     }
 
     public function stats()
     {
-        return response()->json([
-            [
-                'label' => 'Visited Members',
-                'value' => Visitor::where('visit_status', 'Visited')->count(),
-                'color' => 'bg-green-600',
-            ],
-            [
-                'label' => 'Not Visited Members',
-                'value' => Visitor::where('visit_status', 'Not Visited')->count(),
-                'color' => 'bg-red-600',
-            ],
-        ]);
+        try {
+            return response()->json([
+                [
+                    'label' => 'Visited Members',
+                    'value' => Visitor::where('visit_status', 'Visited')->count(),
+                    'color' => 'bg-green-600',
+                ],
+                [
+                    'label' => 'Not Visited Members',
+                    'value' => Visitor::where('visit_status', 'Not Visited')->count(),
+                    'color' => 'bg-red-600',
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching visitor stats: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Internal server error',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

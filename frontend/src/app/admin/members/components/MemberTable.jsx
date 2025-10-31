@@ -1,3 +1,4 @@
+// components/MemberTable.jsx
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -38,11 +39,14 @@ export default function MemberTable({ search }) {
       {filtered.length === 0 && (
         <p className="text-gray-500 text-center">No members found</p>
       )}
-      {filtered.map((m) => (
+      {filtered.map((m, i) => (
         <div
           key={m.id}
           className="flex justify-between items-center border-b py-4"
         >
+          <div className="mr-4">
+            <p className="font-bold">#{i + 1}</p>
+          </div>
           <div>
             <h3 className="font-semibold">
               {m.full_name} - {m.member_id || m.id}
