@@ -2,10 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\SuperAdminController; // We will make this next
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\VisitorController;
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -16,60 +17,48 @@ Route::post('/login', [AuthController::class, 'login']);
 
 /*
 |--------------------------------------------------------------------------
-| Protected Admin Routes
+| Authenticated Routes (Logged In Users)
 |--------------------------------------------------------------------------
-|
-| ✅ Admin routes are protected by Sanctum and the 'admin' middleware
-| Admins can manage members, view dashboards, and handle attendance.
-|
 */
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-    Route::get('/admin/dashboard', [AdminController::class, 'index']);
+Route::middleware(['auth:sanctum'])->group(function () {
 
-    // =====================
-    // MEMBERS ROUTES
-    // =====================
-    Route::get('/members/stats', [MemberController::class, 'stats']);
-    Route::get('/members', [MemberController::class, 'index']);
-    Route::post('/members', [MemberController::class, 'store']);
-    Route::get('/members/{id}', [MemberController::class, 'show']);
-    Route::put('/members/{id}', [MemberController::class, 'update']);
-    Route::delete('/members/{id}', [MemberController::class, 'destroy']);
+    // ✅ logout is available to everyone
+    Route::post('/logout', [AuthController::class, 'logout']);
 
-    // =====================
-    // ATTENDANCE ROUTES
-    // =====================
-    Route::get('/attendance/stats', [AttendanceController::class, 'stats']);
-    Route::get('/attendance', [AttendanceController::class, 'index']);
-    Route::post('/attendance', [AttendanceController::class, 'store']);
-    Route::get('/attendance/members', [AttendanceController::class, 'getActiveMembers']);
-    Route::get('/attendance/{id}', [AttendanceController::class, 'show']);
-    Route::put('/attendance/{id}', [AttendanceController::class, 'update']);
-    Route::delete('/attendance/{id}', [AttendanceController::class, 'destroy']);
+    /*
+    |--------------------------------------------------------------------------
+    | Management Routes (Super Admin, Admin, Pastor)
+    |--------------------------------------------------------------------------
+    | The 'role' middleware allows super_admin automatically.
+    | We explicitly add 'admin' and 'pastor'.
+    */
+    Route::middleware(['role:admin,pastor'])->group(function () {
+        
+        // Members
+        Route::get('/members/stats', [MemberController::class, 'stats']);
+        Route::apiResource('members', MemberController::class);
 
+        // Attendance
+        Route::get('/attendance/stats', [AttendanceController::class, 'stats']);
+        Route::get('/attendance/members', [AttendanceController::class, 'getActiveMembers']);
+        Route::apiResource('attendance', AttendanceController::class);
 
+        // Visitors
+        Route::get('/visitors/stats', [VisitorController::class, 'stats']);
+        Route::apiResource('visitors', VisitorController::class);
+    });
 
-    // =====================
-// VISITORS ROUTES
-// =====================
-Route::get('/visitors/stats', [VisitorController::class, 'stats']);
-Route::get('/visitors', [VisitorController::class, 'index']);
-Route::post('/visitors', [VisitorController::class, 'store']);
-Route::get('/visitors/{id}', [VisitorController::class, 'show']);
-Route::put('/visitors/{id}', [VisitorController::class, 'update']);
-Route::delete('/visitors/{id}', [VisitorController::class, 'destroy']);
+    /*
+    |--------------------------------------------------------------------------
+    | SUPER ADMIN Routes
+    |--------------------------------------------------------------------------
+    | Only the 'super_admin' can access these.
+    | Used to promote users to 'admin' or 'pastor'.
+    */
+    Route::middleware(['role:super_admin'])->prefix('super-admin')->group(function () {
+        Route::get('/users', [SuperAdminController::class, 'index']); // List all login accounts
+        Route::put('/users/{id}/role', [SuperAdminController::class, 'updateRole']); // Change role
+        Route::delete('/users/{id}', [SuperAdminController::class, 'destroy']); // Delete login account
+    });
 
 });
-
-/*
-|--------------------------------------------------------------------------
-| Local Testing Route (No Auth)
-|--------------------------------------------------------------------------
-|
-| ⚠️ TEMPORARY: allows you to test member creation without token
-| Remove this route in production once authentication works.
-|
-*/
-if (app()->environment('local')) {
-    Route::post('/members/test-create', [MemberController::class, 'store']);
-}

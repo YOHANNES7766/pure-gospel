@@ -5,7 +5,6 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
 // ✅ Import exception classes BEFORE anything else
-use Throwable;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\AuthenticationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -27,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ✅ Register custom middleware aliases
         $middleware->alias([
             'admin' => IsAdmin::class,
+            'role' => \App\Http\Middleware\CheckRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

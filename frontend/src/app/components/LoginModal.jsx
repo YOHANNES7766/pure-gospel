@@ -37,17 +37,31 @@ export default function LoginModal({ isOpen, onClose, onOpenSignup }) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      
+      // ... inside handleSubmit ...
+
       // Role-based redirect
       const role = data.user?.role?.toLowerCase();
+      console.log("User Role:", role); // Debugging
 
-      if (role === "superadmin" || role === "admin") {
+      // 1. Super Admin ONLY -> /super-admin
+      if (role === "super_admin" || role === "superadmin") {
+        router.push("/super-admin");
+      } 
+      // 2. Admin ONLY -> /admin
+      else if (role === "admin") {
         router.push("/admin");
-      } else if (role === "pastor") {
+      } 
+      // 3. Pastor -> /pastor
+      else if (role === "pastor") {
         router.push("/pastor");
-      } else if (role === "member" || role === "user") {
+      } 
+      // 4. Member / User -> /member
+      else if (role === "member" || role === "user") {
         router.push("/member");
-      } else {
-        setError("Unauthorized role. Please contact support.");
+      } 
+      else {
+        setError(`Unauthorized role: ${role}. Please contact support.`);
         return;
       }
 
