@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link"; // <--- ADDED THIS IMPORT
 import { useTheme } from "../context/ThemeContext";
 import {
   Users,
@@ -12,7 +13,8 @@ import {
   Search,
   Sun,
   Moon,
-  Filter
+  Filter,
+  Settings // <--- ENSURE SETTINGS IS IMPORTED
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -192,6 +194,18 @@ export default function SuperAdminDashboard() {
                 {isDark ? <Moon size={14} fill="currentColor" /> : <Sun size={14} fill="currentColor" />}
               </motion.div>
             </div>
+
+            {/* === NEW BUTTON: MANAGE ROLES === */}
+            <Link href="/super-admin/roles">
+                <button className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all shadow-sm border ${
+                    isDark 
+                    ? "bg-slate-800 border-slate-700 text-indigo-400 hover:bg-slate-700" 
+                    : "bg-white border-slate-200 text-indigo-600 hover:bg-indigo-50"
+                }`}>
+                    <Settings size={16} />
+                    <span className="hidden sm:inline">Manage Roles</span>
+                </button>
+            </Link>
 
             <div className={`h-8 w-px ${isDark ? "bg-slate-700" : "bg-slate-200"}`}></div>
 

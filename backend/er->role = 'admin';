@@ -1,0 +1,13 @@
+[90m= [39m[34;4mApp\Models\User[39;24m {#6037
+    [34mid[39m: [35m1[39m,
+    [34mfullName[39m: "[32mSuper Admin[39m",
+    [34mmobile[39m: "[32m0965548360[39m",
+    #[33mpassword[39m: "[32m$2y$12$IMKPDCU1H0SMPiabp0buBO4o3L0ZuHT.FO6VM9oU0tYXXJlBinFJG[39m",
+    [34minterests[39m: [36mnull[39m,
+    [34mmember_status[39m: "[32myes[39m",
+    [34mrole[39m: "[32msuper_admin[39m",
+    #[33mremember_token[39m: [36mnull[39m,
+    [34mcreated_at[39m: "[32m2025-10-08 11:37:03[39m",
+    [34mupdated_at[39m: "[32m2025-11-30 10:38:28[39m",
+  }
+
