@@ -120,7 +120,7 @@ class SuperAdminController extends Controller
     public function getAuditLogs() 
     {
         // Fetch latest 50 logs including the person who performed the action ('causer')
-        $logs = Activity::with('causer:id,fullName') // Only get ID and Name of the admin
+        $logs = Activity::with('causer:id,fullName','subject') // Only get ID and Name of the admin
             ->latest()
             ->limit(50)
             ->get();
