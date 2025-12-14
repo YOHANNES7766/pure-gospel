@@ -94,4 +94,24 @@ class SuperAdminController extends Controller
             
         return response()->json($logs);
     }
+
+public function approveMember($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['member_status' => 'Active']);
+        return response()->json(['message' => 'Member approved']);
+    }
+
+    public function toggleSuspension($id)
+    {
+        $user = User::findOrFail($id);
+        $newStatus = ($user->member_status === 'Suspended') ? 'Active' : 'Suspended';
+        $user->update(['member_status' => $newStatus]);
+        
+        if($newStatus === 'Suspended') $user->tokens()->delete(); // Kick user out
+
+        return response()->json(['message' => "User $newStatus"]);
+    }
+
+    
 }
