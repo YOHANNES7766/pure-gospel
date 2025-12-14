@@ -4,23 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Spatie\Activitylog\Models\Activity; // ✅ Import for Audit Logs
+use Spatie\Activitylog\Models\Activity;
 
 class SuperAdminController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
-    | Existing Features
+    | Existing Features (Unchanged)
     |--------------------------------------------------------------------------
     */
-
-    // List all users
     public function index()
     {
         return response()->json(User::all(['id', 'fullName', 'mobile', 'role', 'member_status']));
     }
 
-    // Promote/Demote User
     public function updateRole(Request $request, $id)
     {
         $request->validate([
@@ -29,16 +26,11 @@ class SuperAdminController extends Controller
 
         $user = User::findOrFail($id);
 
-        // Prevent Super Admin from demoting themselves
         if ($user->id === $request->user()->id) {
             return response()->json(['message' => 'You cannot change your own role'], 403);
         }
 
-        // 1. Update the local 'role' column
         $user->update(['role' => $request->role]);
-
-        // 2. Sync with Spatie Permissions (Crucial for the permission system to work)
-        // This ensures the user actually gets the permissions associated with the role
         $user->syncRoles($request->role);
 
         return response()->json([
@@ -47,7 +39,6 @@ class SuperAdminController extends Controller
         ]);
     }
 
-    // Delete User
     public function destroy($id)
     {
         $user = User::findOrFail($id);
@@ -61,69 +52,45 @@ class SuperAdminController extends Controller
         return response()->json(['message' => 'User account deleted']);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | ✅ NEW: Security & Authority Features
-    |--------------------------------------------------------------------------
-    */
-
-    /**
-     * Kicks the user out of all devices (Mobile & Web).
-     * Useful if a phone is stolen or an account is compromised.
-     */
     public function revokeSessions($id)
     {
         $user = User::findOrFail($id);
-        
-        // Deletes all Sanctum tokens from the database
         $user->tokens()->delete();
-
-        // Manually log this security action
-        activity()
-           ->causedBy(auth()->user())
-           ->performedOn($user)
-           ->log('Security: Revoked all user sessions');
-
+        activity()->causedBy(auth()->user())->performedOn($user)->log('Security: Revoked all user sessions');
         return response()->json(['message' => 'User has been logged out of all devices.']);
     }
 
-    /**
-     * Forces a password reset for a specific user.
-     * Automatically revokes old sessions so they must log in with the new password.
-     */
     public function forcePasswordReset(Request $request, $id)
     {
         $request->validate(['password' => 'required|min:8']);
-        
         $user = User::findOrFail($id);
-        
-        // Your User model mutator automatically hashes this
         $user->password = $request->password; 
         $user->save();
-        
-        // Revoke tokens so they are forced to login with new password
         $user->tokens()->delete(); 
-
-        // Log the event
-        activity()
-           ->causedBy(auth()->user())
-           ->performedOn($user)
-           ->log('Security: Forced password reset');
-
+        activity()->causedBy(auth()->user())->performedOn($user)->log('Security: Forced password reset');
         return response()->json(['message' => 'Password reset successful. User logged out.']);
     }
 
-    /**
-     * Retrieve the system audit logs.
-     * Shows who did what, when.
-     */
-    public function getAuditLogs() 
+    /*
+    |--------------------------------------------------------------------------
+    | ✅ UPDATED: getAuditLogs for Pagination
+    |--------------------------------------------------------------------------
+    */
+    public function getAuditLogs(Request $request) 
     {
-        // Fetch latest 50 logs including the person who performed the action ('causer')
-        $logs = Activity::with('causer:id,fullName','subject') // Only get ID and Name of the admin
-            ->latest()
-            ->limit(50)
-            ->get();
+        $perPage = $request->get('limit', 10); // Default to 10 logs per page
+        $page = $request->get('page', 1);     // Default to page 1
+
+        $logsQuery = Activity::with(['causer:id,fullName', 'subject'])
+            ->latest();
+            
+        // You can add filtering here if needed (e.g., by subject_type, description)
+        // For example:
+        // if ($request->has('filter_type')) {
+        //     $logsQuery->where('subject_type', 'like', '%' . $request->filter_type . '%');
+        // }
+
+        $logs = $logsQuery->paginate($perPage, ['*'], 'page', $page);
             
         return response()->json($logs);
     }
