@@ -13,14 +13,14 @@ class RolePermissionController extends Controller
      */
     public function index()
     {
-        // Return roles hidden from normal view if needed, but usually show all except maybe super_admin
-        $roles = Role::with('permissions')->where('name', '!=', 'super_admin')->get();
+        // We show all roles so Super Admin can see the system structure
+        // The Frontend will handle "locking" the super_admin card
+        $roles = Role::with('permissions')->get();
         return response()->json($roles);
     }
 
     /**
      * Get list of ALL available features (Permissions)
-     * This fills the checkboxes on the frontend
      */
     public function getAllPermissions()
     {
@@ -28,22 +28,26 @@ class RolePermissionController extends Controller
     }
 
     /**
-     * Create a new Custom Role (e.g., "Media Team")
+     * Create a new Custom Role
      */
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|unique:roles,name|max:255',
-            'permissions' => 'array' // Array of permission names ['view_finance', 'edit_posts']
+            'permissions' => 'array' // ['view_finance', 'edit_posts']
         ]);
 
-        // Create the role
         $role = Role::create(['name' => $request->name, 'guard_name' => 'web']);
 
-        // Assign permissions if sent
         if (!empty($request->permissions)) {
             $role->syncPermissions($request->permissions);
         }
+
+        // ✅ LOGGING
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($role)
+            ->log("Created new role: {$request->name}");
 
         return response()->json([
             'message' => 'Role created successfully',
@@ -56,19 +60,26 @@ class RolePermissionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $role = Role::findById($id);
+        // Use findOrFail for standard 404 response if missing
+        $role = Role::findOrFail($id);
 
-        // Security: Prevent editing Super Admin
+        // Security: Prevent editing Super Admin permissions
+        // This ensures no one can accidentally break the root access
         if ($role->name === 'super_admin') {
-            return response()->json(['message' => 'Cannot edit Super Admin permissions'], 403);
+            return response()->json(['message' => 'System Critical: Cannot modify Super Admin permissions'], 403);
         }
 
         $request->validate([
             'permissions' => 'required|array'
         ]);
 
-        // Sync (Overwrite) permissions
         $role->syncPermissions($request->permissions);
+
+        // ✅ LOGGING
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($role)
+            ->log("Updated permissions for role: {$role->name}");
 
         return response()->json([
             'message' => 'Permissions updated successfully',
@@ -81,13 +92,22 @@ class RolePermissionController extends Controller
      */
     public function destroy($id)
     {
-        $role = Role::findById($id);
+        $role = Role::findOrFail($id);
 
-        if (in_array($role->name, ['super_admin', 'admin', 'pastor'])) {
-            return response()->json(['message' => 'Cannot delete system core roles'], 403);
+        // Security: Protect Critical Roles
+        $protectedRoles = ['super_admin', 'admin', 'pastor'];
+
+        if (in_array($role->name, $protectedRoles)) {
+            return response()->json(['message' => 'Action Denied: Cannot delete system core roles'], 403);
         }
 
+        $roleName = $role->name; // Save name for log before deleting
         $role->delete();
+
+        // ✅ LOGGING
+        activity()
+            ->causedBy(auth()->user())
+            ->log("Deleted role: {$roleName}");
 
         return response()->json(['message' => 'Role deleted successfully']);
     }
