@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link"; // <--- ADDED THIS IMPORT
+import Link from "next/link";
 import { useTheme } from "../context/ThemeContext";
 import {
   Users,
@@ -14,11 +14,10 @@ import {
   Sun,
   Moon,
   Filter,
-  Settings // <--- ENSURE SETTINGS IS IMPORTED
+  Settings
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  BarChart,
   XAxis,
   YAxis,
   Tooltip,
@@ -31,6 +30,11 @@ import {
   Area
 } from "recharts";
 
+// ✅ NEW IMPORTS: CORE SECURITY FEATURES
+// Ensure these files exist in src/components/super-admin/
+
+import UserSecurityControls from "../components/super-admin/UserSecurityControls";
+import AuditLogViewer from "../components/super-admin/AuditLogViewer";
 /* === SAMPLE DATA === */
 const userGrowthData = [
   { month: "Jan", users: 50 },
@@ -195,7 +199,7 @@ export default function SuperAdminDashboard() {
               </motion.div>
             </div>
 
-            {/* === NEW BUTTON: MANAGE ROLES === */}
+            {/* === MANAGE ROLES BUTTON === */}
             <Link href="/super-admin/roles">
                 <button className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all shadow-sm border ${
                     isDark 
@@ -336,7 +340,6 @@ export default function SuperAdminDashboard() {
                   />
                 </PieChart>
               </ResponsiveContainer>
-              {/* Center Text in Donut */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-[-20px]">
                  <span className={`text-3xl font-bold ${isDark ? "text-white" : "text-slate-800"}`}>{stats.total}</span>
                  <span className={`text-xs uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}>Users</span>
@@ -353,6 +356,10 @@ export default function SuperAdminDashboard() {
             </div>
           </ChartCard>
         </div>
+
+        {/* === ✅ NEW SECTION: AUDIT LOGS === */}
+        {/* Placed here so it's between charts and the user management table */}
+        <AuditLogViewer isDark={isDark} />
 
         {/* === USER TABLE === */}
         <ChartCard title="User Database" isDark={isDark}>
@@ -378,8 +385,8 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
           
-          <div className={`overflow-hidden rounded-xl border ${isDark ? "border-slate-800" : "border-slate-100"}`}>
-            <table className="w-full text-left border-collapse">
+          <div className={`overflow-x-auto rounded-xl border ${isDark ? "border-slate-800" : "border-slate-100"}`}>
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className={`text-xs uppercase tracking-wider ${
                   isDark ? "bg-slate-800/50 text-slate-400" : "bg-slate-50/80 text-slate-500"
@@ -388,6 +395,8 @@ export default function SuperAdminDashboard() {
                   <th className="py-4 px-6 font-semibold">Contact</th>
                   <th className="py-4 px-6 text-center font-semibold">Status</th>
                   <th className="py-4 px-6 text-center font-semibold">Access Level</th>
+                  {/* ✅ NEW COLUMN HEADER */}
+                  <th className="py-4 px-6 text-center font-semibold">Security Actions</th>
                 </tr>
               </thead>
               <tbody className={`divide-y ${isDark ? "divide-slate-800" : "divide-slate-100"}`}>
@@ -443,7 +452,7 @@ export default function SuperAdminDashboard() {
                             <option value="pastor">Pastor</option>
                             <option value="admin">Admin</option>
                             
-                            {/* === FIX: ONLY SHOW SUPER ADMIN IF USER IS ALREADY ONE === */}
+                            {/* ONLY SHOW SUPER ADMIN IF USER IS ALREADY ONE */}
                             {user.role === "super_admin" && (
                                 <option value="super_admin">Super Admin</option>
                             )}
@@ -454,11 +463,18 @@ export default function SuperAdminDashboard() {
                           </div>
                         </div>
                       </td>
+                      
+                      {/* ✅ NEW: SECURITY CONTROLS */}
+                      <td className="py-4 px-6 text-center">
+                        <UserSecurityControls userId={user.id} userName={user.fullName} isDark={isDark} />
+                      </td>
+
                     </motion.tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className={`text-center py-12 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                    {/* ✅ UPDATED COLSPAN TO 5 */}
+                    <td colSpan="5" className={`text-center py-12 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
                       <div className="flex flex-col items-center gap-2">
                         <Search className="h-8 w-8 opacity-20" />
                         <p>No users found matching "{searchTerm}"</p>
@@ -476,6 +492,7 @@ export default function SuperAdminDashboard() {
 }
 
 /* === ENHANCED CARD COMPONENTS === */
+// These remain exactly as you had them
 
 function StatCard({ title, value, subtitle, icon, gradient, delay }) {
   return (
