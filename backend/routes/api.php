@@ -7,6 +7,7 @@ use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\VisitorController;
+use App\Http\Controllers\DepartmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,6 +69,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
           // 3. System Audit (Moved INSIDE the protection group)
         Route::get('/audit-logs', [SuperAdminController::class, 'getAuditLogs']); // Audit Logs
+
+
+
+    // Member Management
+    Route::post('/users/{id}/approve', [SuperAdminController::class, 'approveMember']);
+    Route::post('/users/{id}/suspend', [SuperAdminController::class, 'toggleSuspension']);
+
+    // Department Management
+    Route::get('/departments', [DepartmentController::class, 'index']);
+    Route::post('/departments', [DepartmentController::class, 'store']);
+    Route::delete('/departments/{id}', [DepartmentController::class, 'destroy']);
+    Route::post('/departments/assign', [DepartmentController::class, 'assignMember']);
+    Route::post('/users{id}/suspend,',[SuperAdminController::class,'toggleSuspension']);
 
         
         
