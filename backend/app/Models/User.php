@@ -11,10 +11,13 @@ use Spatie\Permission\Traits\HasRoles;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
+
 class User extends Authenticatable
 {
+    
     // 2. Add LogsActivity to your traits
     use HasApiTokens, HasFactory, Notifiable, HasRoles, LogsActivity;
+    use HasFactory;
 
     protected $fillable = [
         'fullName',
@@ -68,5 +71,14 @@ class User extends Authenticatable
             
             // Add a description to the log
             ->setDescriptionForEvent(fn(string $eventName) => "User has been {$eventName}");
+
+
     }
-}
+
+    public function departments()
+     {
+         return $this->belongsToMany(Department::class, 'department_user')->withPivot('role_in_dept');
+     }
+
+    
+}     
