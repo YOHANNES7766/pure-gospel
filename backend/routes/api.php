@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SuperAdminController; 
-use App\Http\Controllers\RolePermissionController; // ✅ Added this
+use App\Http\Controllers\RolePermissionController; 
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\VisitorController;
@@ -64,6 +64,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/permissions', [RolePermissionController::class, 'getAllPermissions']); // Get "view_finance" checkboxes
         Route::put('/roles/{id}', [RolePermissionController::class, 'update']); // Update permissions
         Route::delete('/roles/{id}', [RolePermissionController::class, 'destroy']); // Delete role
+        
+
+          // 3. System Audit (Moved INSIDE the protection group)
+        Route::get('/audit-logs', [SuperAdminController::class, 'getAuditLogs']); // Audit Logs
+
+        
+        
     });
+
+    
 
 });
