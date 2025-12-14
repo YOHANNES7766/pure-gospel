@@ -55,34 +55,50 @@ class RolePermissionController extends Controller
         ], 201);
     }
 
+   
     /**
-     * Update permissions for an existing role
+     * Update permissions OR rename an existing role
      */
     public function update(Request $request, $id)
     {
-        // Use findOrFail for standard 404 response if missing
         $role = Role::findOrFail($id);
 
-        // Security: Prevent editing Super Admin permissions
-        // This ensures no one can accidentally break the root access
+        // Security: Prevent editing Super Admin
         if ($role->name === 'super_admin') {
-            return response()->json(['message' => 'System Critical: Cannot modify Super Admin permissions'], 403);
+            return response()->json(['message' => 'System Critical: Cannot modify Super Admin'], 403);
         }
 
+        // 1. Validation
+        // Changed 'permissions' to 'sometimes' so you can rename without sending permissions
         $request->validate([
-            'permissions' => 'required|array'
+            'name' => 'sometimes|required|string|unique:roles,name,' . $role->id,
+            'permissions' => 'sometimes|array' 
         ]);
 
-        $role->syncPermissions($request->permissions);
+        // 2. Update Name (if provided)
+        if ($request->has('name') && $request->name !== $role->name) {
+            $oldName = $role->name;
+            $role->name = $request->name;
+            $role->save();
+            
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($role)
+                ->log("Renamed role from '$oldName' to '{$request->name}'");
+        }
 
-        // ✅ LOGGING
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($role)
-            ->log("Updated permissions for role: {$role->name}");
+        // 3. Sync Permissions (if provided)
+        if ($request->has('permissions')) {
+            $role->syncPermissions($request->permissions);
+            
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($role)
+                ->log("Updated permissions for role: {$role->name}");
+        }
 
         return response()->json([
-            'message' => 'Permissions updated successfully',
+            'message' => 'Role updated successfully',
             'role' => $role->load('permissions')
         ]);
     }
