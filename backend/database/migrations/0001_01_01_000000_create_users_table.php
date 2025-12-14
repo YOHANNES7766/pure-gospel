@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('mobile')->unique();
             $table->string('password');
             $table->json('interests')->nullable();
-            $table->enum('member_status', ['yes', 'no'])->default('no');
+            $table->string('member_status')->default('Pending');
             $table->string('role')->default('user'); // admin or user
             $table->rememberToken();
             $table->timestamps();
