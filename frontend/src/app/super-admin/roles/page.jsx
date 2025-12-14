@@ -4,8 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "../../context/ThemeContext";
-import { Shield, ArrowLeft, Plus, Check, Trash2, Lock } from "lucide-react";
+// Added Edit2, Save, X icons
+import { Shield, ArrowLeft, Plus, Check, Trash2, Lock, AlertTriangle, Edit2, Save, X } from "lucide-react";
 import { motion } from "framer-motion";
+
+// Roles that cannot be deleted OR renamed to prevent system breakage
+const PROTECTED_ROLES = ["super_admin", "admin", "pastor"];
 
 export default function RoleManager() {
   const router = useRouter();
@@ -18,9 +22,12 @@ export default function RoleManager() {
   const [newRoleName, setNewRoleName] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // ✅ NEW STATE FOR RENAMING
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-  // Styles matching your Dashboard
   const cardClass = isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100";
   const inputClass = isDark ? "bg-slate-950 border-slate-700 text-slate-200" : "bg-slate-50 border-slate-200 text-slate-800";
 
@@ -32,6 +39,12 @@ export default function RoleManager() {
     }
     fetchData(token);
   }, []);
+
+  // Reset rename state when switching roles
+  useEffect(() => {
+    setIsRenaming(false);
+    if(selectedRole) setRenameValue(selectedRole.name);
+  }, [selectedRole]);
 
   const fetchData = async (token) => {
     try {
@@ -69,24 +82,45 @@ export default function RoleManager() {
     } catch(e) { console.error(e) }
   };
 
-  const updatePermissions = async (roleId, permissionName) => {
+  // ✅ NEW FUNCTION: RENAME ROLE
+  const handleRenameSubmit = async () => {
+    if (!renameValue || renameValue === selectedRole.name) {
+        setIsRenaming(false);
+        return;
+    }
+
     // Optimistic Update
+    const updatedRoles = roles.map(r => r.id === selectedRole.id ? { ...r, name: renameValue } : r);
+    setRoles(updatedRoles);
+    setSelectedRole({ ...selectedRole, name: renameValue });
+    setIsRenaming(false);
+
+    try {
+        const token = localStorage.getItem("token");
+        await fetch(`${API_URL}/api/super-admin/roles/${selectedRole.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ name: renameValue }),
+        });
+    } catch (e) {
+        console.error(e);
+        fetchData(localStorage.getItem("token")); // Revert on error
+    }
+  };
+
+  const updatePermissions = async (roleId, permissionName) => {
     const role = roles.find((r) => r.id === roleId);
     const hasPermission = role.permissions.some((p) => p.name === permissionName);
     
     let newPerms = role.permissions.map(p => p.name);
-    if (hasPermission) {
-      newPerms = newPerms.filter((p) => p !== permissionName);
-    } else {
-      newPerms.push(permissionName);
-    }
+    if (hasPermission) newPerms = newPerms.filter((p) => p !== permissionName);
+    else newPerms.push(permissionName);
 
     const updatedRoles = roles.map(r => 
         r.id === roleId ? { ...r, permissions: newPerms.map(name => ({ name })) } : r
     );
     setRoles(updatedRoles);
 
-    // API Call
     const token = localStorage.getItem("token");
     await fetch(`${API_URL}/api/super-admin/roles/${roleId}`, {
       method: "PUT",
@@ -95,10 +129,15 @@ export default function RoleManager() {
     });
   };
 
-  const deleteRole = async (id) => {
-    if(!confirm("Are you sure? This action cannot be undone.")) return;
+  const deleteRole = async (role) => {
+    if (PROTECTED_ROLES.includes(role.name)) {
+        alert("Action Denied: This is a System Critical Role.");
+        return;
+    }
+    if(!confirm(`Delete role "${role.name}"? This cannot be undone.`)) return;
+    
     const token = localStorage.getItem("token");
-    await fetch(`${API_URL}/api/super-admin/roles/${id}`, {
+    await fetch(`${API_URL}/api/super-admin/roles/${role.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -131,7 +170,6 @@ export default function RoleManager() {
         <div className={`p-6 rounded-2xl border shadow-sm ${cardClass}`}>
             <h2 className="font-bold mb-4">System Roles</h2>
             
-            {/* Create Input */}
             <div className="flex gap-2 mb-6">
                 <input 
                     value={newRoleName}
@@ -157,12 +195,17 @@ export default function RoleManager() {
                         }`}
                     >
                         <span className="capitalize font-medium">{role.name.replace('_', ' ')}</span>
-                        {role.name !== 'super_admin' ? (
+                        {PROTECTED_ROLES.includes(role.name) ? (
+                            <div className="flex items-center gap-2">
+                                {role.name === 'super_admin' && <Lock size={14} className="opacity-70" />}
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${selectedRole?.id === role.id ? "bg-white/20" : "bg-amber-500/10 text-amber-500 border border-amber-500/20"}`}>
+                                    System
+                                </span>
+                            </div>
+                        ) : (
                             <span className={`text-xs px-2 py-0.5 rounded-full ${selectedRole?.id === role.id ? "bg-white/20" : "bg-slate-200 dark:bg-slate-800"}`}>
                                 {role.permissions.length}
                             </span>
-                        ) : (
-                            <Lock size={14} className="opacity-70" />
                         )}
                     </motion.div>
                 ))}
@@ -174,49 +217,104 @@ export default function RoleManager() {
             {selectedRole ? (
                 <>
                     <div className="flex justify-between items-start mb-6 border-b pb-4 border-dashed border-slate-700">
-                        <div>
-                            <h2 className="text-xl font-bold capitalize">{selectedRole.name.replace('_', ' ')}</h2>
-                            <p className="text-sm opacity-60">Manage permissions for this role</p>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                                {/* ✅ RENAME LOGIC START */}
+                                {isRenaming ? (
+                                    <div className="flex items-center gap-2">
+                                        <input 
+                                            value={renameValue}
+                                            onChange={(e) => setRenameValue(e.target.value)}
+                                            className={`px-2 py-1 rounded border text-lg font-bold outline-none focus:ring-2 focus:ring-indigo-500 ${inputClass}`}
+                                            autoFocus
+                                        />
+                                        <button onClick={handleRenameSubmit} className="p-1.5 bg-green-500/20 text-green-500 rounded hover:bg-green-500/30">
+                                            <Save size={18} />
+                                        </button>
+                                        <button onClick={() => setIsRenaming(false)} className="p-1.5 bg-red-500/20 text-red-500 rounded hover:bg-red-500/30">
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <h2 className="text-xl font-bold capitalize">{selectedRole.name.replace('_', ' ')}</h2>
+                                        
+                                        {/* RENAME BUTTON: Only show if NOT protected */}
+                                        {!PROTECTED_ROLES.includes(selectedRole.name) && (
+                                            <button 
+                                                onClick={() => setIsRenaming(true)}
+                                                className={`p-1.5 rounded transition ${isDark ? "hover:bg-slate-800 text-slate-500" : "hover:bg-slate-100 text-slate-400"}`}
+                                                title="Rename Role"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+                                {/* ✅ RENAME LOGIC END */}
+
+                                {PROTECTED_ROLES.includes(selectedRole.name) && (
+                                    <span className="text-xs font-bold text-amber-500 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                                        System Protected
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-sm opacity-60 mt-1">Manage permissions for this role</p>
                         </div>
-                        {selectedRole.name !== 'super_admin' && (
-                            <button onClick={() => deleteRole(selectedRole.id)} className="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition">
+                        
+                        {!PROTECTED_ROLES.includes(selectedRole.name) && (
+                            <button onClick={() => deleteRole(selectedRole)} className="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition ml-4">
                                 <Trash2 size={18} />
                             </button>
                         )}
                     </div>
 
                     {selectedRole.name === 'super_admin' ? (
-                        <div className="bg-amber-500/10 text-amber-500 p-6 rounded-xl border border-amber-500/20 text-center">
-                            <Shield size={40} className="mx-auto mb-2" />
-                            <p className="font-bold">Full System Access</p>
-                            <p className="text-sm opacity-80">Super Admins have all permissions by default. This cannot be changed.</p>
+                        <div className="bg-amber-500/10 text-amber-500 p-8 rounded-xl border border-amber-500/20 text-center">
+                            <Shield size={48} className="mx-auto mb-4" />
+                            <h3 className="text-lg font-bold mb-2">Full System Access</h3>
+                            <p className="text-sm opacity-80 max-w-md mx-auto">
+                                The Super Admin role bypasses all permission checks. It automatically has access to every feature in the system and cannot be modified.
+                            </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {permissions.map((perm) => {
-                                const isChecked = selectedRole.permissions.some(p => p.name === perm.name);
-                                return (
-                                    <div 
-                                        key={perm.id}
-                                        onClick={() => updatePermissions(selectedRole.id, perm.name)}
-                                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                                            isChecked 
-                                            ? "bg-emerald-500/10 border-emerald-500/30" 
-                                            : `${isDark ? "border-slate-800 hover:bg-slate-800" : "border-slate-100 hover:bg-slate-50"}`
-                                        }`}
-                                    >
-                                        <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
-                                            isChecked ? "bg-emerald-500 text-white" : "bg-slate-300 dark:bg-slate-700"
-                                        }`}>
-                                            {isChecked && <Check size={12} strokeWidth={3} />}
-                                        </div>
-                                        <span className={`capitalize text-sm ${isChecked ? "text-emerald-500 font-medium" : "opacity-70"}`}>
-                                            {perm.name.replace(/_/g, ' ')}
-                                        </span>
+                        <>
+                            {PROTECTED_ROLES.includes(selectedRole.name) && (
+                                <div className="mb-6 flex items-start gap-3 p-4 rounded-lg bg-blue-500/5 border border-blue-500/20 text-blue-500">
+                                    <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+                                    <div className="text-sm">
+                                        <span className="font-bold block mb-1">Core Role Warning</span>
+                                        This is a default system role. You can edit its permissions, but you cannot rename or delete it.
                                     </div>
-                                )
-                            })}
-                        </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {permissions.map((perm) => {
+                                    const isChecked = selectedRole.permissions.some(p => p.name === perm.name);
+                                    return (
+                                        <div 
+                                            key={perm.id}
+                                            onClick={() => updatePermissions(selectedRole.id, perm.name)}
+                                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                                                isChecked 
+                                                ? "bg-emerald-500/10 border-emerald-500/30" 
+                                                : `${isDark ? "border-slate-800 hover:bg-slate-800" : "border-slate-100 hover:bg-slate-50"}`
+                                            }`}
+                                        >
+                                            <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
+                                                isChecked ? "bg-emerald-500 text-white" : "bg-slate-300 dark:bg-slate-700"
+                                            }`}>
+                                                {isChecked && <Check size={12} strokeWidth={3} />}
+                                            </div>
+                                            <span className={`capitalize text-sm ${isChecked ? "text-emerald-500 font-medium" : "opacity-70"}`}>
+                                                {perm.name.replace(/_/g, ' ')}
+                                            </span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </>
                     )}
                 </>
             ) : (
