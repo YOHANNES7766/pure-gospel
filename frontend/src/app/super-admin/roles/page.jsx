@@ -109,24 +109,49 @@ export default function RoleManager() {
   };
 
   const updatePermissions = async (roleId, permissionName) => {
+    // 1. Find the current role
     const role = roles.find((r) => r.id === roleId);
+    
+    // 2. check if permission exists
     const hasPermission = role.permissions.some((p) => p.name === permissionName);
     
-    let newPerms = role.permissions.map(p => p.name);
-    if (hasPermission) newPerms = newPerms.filter((p) => p !== permissionName);
-    else newPerms.push(permissionName);
+    // 3. Create new list of permission names
+    let newPermNames = role.permissions.map(p => p.name);
+    
+    if (hasPermission) {
+      // Remove it
+      newPermNames = newPermNames.filter((p) => p !== permissionName);
+    } else {
+      // Add it
+      newPermNames.push(permissionName);
+    }
 
+    // 4. Format them back into objects { name: "..." } for the UI
+    const newPermissionObjects = newPermNames.map(name => ({ name }));
+
+    // 5. Update the MAIN list (for the sidebar counts)
     const updatedRoles = roles.map(r => 
-        r.id === roleId ? { ...r, permissions: newPerms.map(name => ({ name })) } : r
+        r.id === roleId ? { ...r, permissions: newPermissionObjects } : r
     );
     setRoles(updatedRoles);
 
+    // ✅ CRITICAL FIX: Update 'selectedRole' so the checkmarks update instantly
+    if (selectedRole && selectedRole.id === roleId) {
+        setSelectedRole({ ...selectedRole, permissions: newPermissionObjects });
+    }
+
+    // 6. API Call
     const token = localStorage.getItem("token");
-    await fetch(`${API_URL}/api/super-admin/roles/${roleId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ permissions: newPerms }),
-    });
+    try {
+        await fetch(`${API_URL}/api/super-admin/roles/${roleId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ permissions: newPermNames }),
+        });
+    } catch (e) {
+        console.error("Failed to update permissions", e);
+        // Optional: Revert changes here if API fails
+    }
   };
 
   const deleteRole = async (role) => {
